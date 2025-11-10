@@ -236,6 +236,50 @@ def create_iam_user(
     )
 
 
+def create_elasticache_cluster(
+    cluster_id: str = "test-cluster",
+    region: str = "us-east-1",
+    engine: str = "redis",
+    encryption_at_rest: bool = True,
+    encryption_in_transit: bool = True,
+    tags: Optional[Dict[str, str]] = None,
+) -> Resource:
+    """Create a mock ElastiCache cluster resource for testing.
+
+    Args:
+        cluster_id: Cluster identifier
+        region: AWS region
+        engine: Engine type (redis or memcached)
+        encryption_at_rest: Whether at-rest encryption is enabled
+        encryption_in_transit: Whether in-transit encryption is enabled
+        tags: Resource tags
+
+    Returns:
+        Resource representing an ElastiCache cluster
+    """
+    raw_config = {
+        "CacheClusterId": cluster_id,
+        "ARN": f"arn:aws:elasticache:{region}:123456789012:cluster:{cluster_id}",
+        "Engine": engine,
+        "CacheNodeType": "cache.t3.micro",
+        "NumCacheNodes": 1,
+        "EngineVersion": "7.0" if engine == "redis" else "1.6.12",
+        "AtRestEncryptionEnabled": encryption_at_rest,
+        "TransitEncryptionEnabled": encryption_in_transit,
+        "CacheClusterStatus": "available",
+    }
+
+    return Resource(
+        arn=f"arn:aws:elasticache:{region}:123456789012:cluster:{cluster_id}",
+        resource_type="elasticache:cluster",
+        name=cluster_id,
+        region=region,
+        config_hash="g" * 64,
+        raw_config=raw_config,
+        tags=tags or {},
+    )
+
+
 def create_secrets_manager_secret(
     secret_name: str = "test-secret",
     region: str = "us-east-1",

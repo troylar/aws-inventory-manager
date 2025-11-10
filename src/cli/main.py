@@ -1409,13 +1409,14 @@ def delta(
     resource_type: Optional[str] = typer.Option(None, "--resource-type", help="Filter by resource type"),
     region: Optional[str] = typer.Option(None, "--region", help="Filter by region"),
     show_details: bool = typer.Option(False, "--show-details", help="Show detailed resource information"),
+    show_diff: bool = typer.Option(False, "--show-diff", help="Show field-level configuration differences"),
     export: Optional[str] = typer.Option(None, "--export", help="Export to file (JSON or CSV based on extension)"),
     profile: Optional[str] = typer.Option(None, "--profile", "-p", help="AWS profile name"),
 ):
     """View resource changes since snapshot.
 
     Compares current AWS state to the snapshot and shows added, deleted,
-    and modified resources.
+    and modified resources. Use --show-diff to see field-level configuration changes.
     """
     try:
         # T021: Get inventory and use its active snapshot
@@ -1495,6 +1496,7 @@ def delta(
             regions=None,  # Use reference snapshot regions
             resource_type_filter=resource_type_filter,
             region_filter=region_filter,
+            include_drift_details=show_diff,
         )
 
         # Display delta

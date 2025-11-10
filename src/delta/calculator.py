@@ -32,12 +32,14 @@ class DeltaCalculator:
         self,
         resource_type_filter: Optional[List[str]] = None,
         region_filter: Optional[List[str]] = None,
+        include_drift_details: bool = False,
     ) -> DeltaReport:
         """Calculate delta between reference and current snapshots.
 
         Args:
             resource_type_filter: Optional list of resource types to include
             region_filter: Optional list of regions to include
+            include_drift_details: Whether to calculate field-level configuration diffs
 
         Returns:
             DeltaReport with added, deleted, and modified resources
@@ -83,6 +85,26 @@ class DeltaCalculator:
                     )
                     modified_resources.append(change)
 
+        # Calculate drift details if requested
+        drift_report = None
+        if include_drift_details and modified_resources:
+            from .differ import ConfigDiffer
+            from .models import DriftReport as ConfigDriftReport
+
+            drift_report = ConfigDriftReport()
+            differ = ConfigDiffer()
+
+            for change in modified_resources:
+                # Only calculate diffs if both resources have raw_config
+                if change.baseline_resource.raw_config and change.resource.raw_config:
+                    diffs = differ.compare(
+                        resource_arn=change.resource.arn,
+                        old_config=change.baseline_resource.raw_config,
+                        new_config=change.resource.raw_config,
+                    )
+                    for diff in diffs:
+                        drift_report.add_diff(diff)
+
         # Create delta report
         report = DeltaReport(
             generated_at=datetime.now(timezone.utc),
@@ -93,6 +115,7 @@ class DeltaCalculator:
             modified_resources=modified_resources,
             baseline_resource_count=len(self.reference.resources),
             current_resource_count=len(self.current.resources),
+            drift_report=drift_report,
         )
 
         logger.info(
@@ -137,6 +160,7 @@ def compare_to_current_state(
     regions: Optional[List[str]] = None,
     resource_type_filter: Optional[List[str]] = None,
     region_filter: Optional[List[str]] = None,
+    include_drift_details: bool = False,
 ) -> DeltaReport:
     """Compare reference snapshot to current AWS state.
 
@@ -148,6 +172,7 @@ def compare_to_current_state(
         regions: Regions to scan (defaults to reference snapshot regions)
         resource_type_filter: Optional list of resource types to include in delta
         region_filter: Optional list of regions to include in delta
+        include_drift_details: Whether to calculate field-level configuration diffs
 
     Returns:
         DeltaReport with changes
@@ -177,4 +202,5 @@ def compare_to_current_state(
     return calculator.calculate(
         resource_type_filter=resource_type_filter,
         region_filter=region_filter,
+        include_drift_details=include_drift_details,
     )
