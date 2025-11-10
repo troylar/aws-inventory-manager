@@ -10,7 +10,7 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Python CLI tool that captures point-in-time snapshots of AWS resources organized by inventory, tracks resource deltas over time, analyzes costs per inventory, and provides restoration capabilities.
+A Python CLI tool that captures point-in-time snapshots of AWS resources organized by inventory, tracks resource deltas over time, scans for security vulnerabilities, analyzes costs per inventory, and provides restoration capabilities.
 
 </div>
 
@@ -22,6 +22,8 @@ A Python CLI tool that captures point-in-time snapshots of AWS resources organiz
 - **📸 Resource Snapshots**: Capture complete inventory of AWS resources across multiple regions
 - **📋 Snapshot Reporting**: Generate comprehensive reports with filtering, detailed views, and export to JSON/CSV/TXT
 - **🔄 Delta Tracking**: Identify resources added, modified, or removed since a snapshot
+- **🔍 Configuration Drift Details**: Field-level comparison showing exactly what changed in modified resources
+- **🔒 Security Scanning**: Automated security posture assessment with CIS AWS Foundations Benchmark mapping
 - **💰 Cost Analysis**: Analyze costs for resources within a specific inventory
 - **🔧 Resource Restoration**: Remove resources added since a snapshot to return to that state
 - **🏷️ Filtered Snapshots**: Create snapshots filtered by tags for specific teams or environments
@@ -84,11 +86,31 @@ awsinv snapshot report --inventory prod-baseline --export report.json
 
 **5. Compare snapshots** (see what changed)
 ```bash
+# See what resources were added, removed, or modified
 awsinv delta --snapshot initial --inventory prod-baseline
-```
-This shows all resources added, removed, or modified since the `initial` snapshot.
 
-**6. Analyze costs**
+# See field-level configuration changes (configuration drift)
+awsinv delta --snapshot initial --inventory prod-baseline --show-diff
+```
+This shows all resources added, removed, or modified since the `initial` snapshot. Use `--show-diff` to see exactly what fields changed in modified resources.
+
+**6. Scan for security issues**
+```bash
+# Scan current resources for security misconfigurations
+awsinv security scan --snapshot initial --inventory prod-baseline
+
+# Filter by severity (CRITICAL, HIGH, MEDIUM, LOW)
+awsinv security scan --severity HIGH --inventory prod-baseline
+
+# Show only CIS Benchmark findings
+awsinv security scan --cis-only --inventory prod-baseline
+
+# Export findings to JSON or CSV
+awsinv security scan --export findings.json --inventory prod-baseline
+```
+This scans for security issues like public S3 buckets, open security groups, unencrypted resources, old credentials, and more.
+
+**7. Analyze costs**
 ```bash
 # Costs since snapshot was created
 awsinv cost --snapshot initial --inventory prod-baseline
@@ -98,7 +120,7 @@ awsinv cost --snapshot initial --inventory prod-baseline \
   --start-date 2025-01-01 --end-date 2025-01-31
 ```
 
-**7. List your resources**
+**8. List your resources**
 ```bash
 # List all inventories
 awsinv inventory list
@@ -252,13 +274,15 @@ awsinv quickstart
 
 ## Supported AWS Services
 
-The tool captures resources from **25 AWS services**:
+The tool captures resources from **27 AWS services**:
 
 - **IAM**: Roles, Users, Groups, Customer-Managed Policies
 - **Lambda**: Functions, Layers
 - **S3**: Buckets (with versioning, encryption metadata)
 - **EC2**: Instances, Volumes, VPCs, Security Groups, Subnets, VPC Endpoints (Interface & Gateway)
 - **RDS**: DB Instances, DB Clusters (Aurora)
+- **EFS**: File Systems (with encryption, performance mode)
+- **ElastiCache**: Redis and Memcached Clusters (with encryption settings)
 - **CloudWatch**: Alarms (Metric & Composite), Log Groups
 - **SNS**: Topics
 - **SQS**: Queues
@@ -278,6 +302,24 @@ The tool captures resources from **25 AWS services**:
 - **CodePipeline**: CI/CD Pipelines
 - **CodeBuild**: Build Projects
 - **Backup**: Backup Plans, Backup Vaults
+
+## Security Checks
+
+The security scanner detects **12+ security misconfigurations** aligned with CIS AWS Foundations Benchmark:
+
+- **S3**: Public buckets (CIS 2.1.5)
+- **Security Groups**: Open SSH (22), RDP (3389), MySQL (3306), PostgreSQL (5432), MSSQL (1433), MongoDB (27017) to 0.0.0.0/0 (CIS 5.2, 5.3)
+- **RDS**: Publicly accessible databases, unencrypted storage
+- **EC2**: IMDSv1 enabled (should require IMDSv2)
+- **IAM**: Access keys older than 90 days (CIS 1.4)
+- **Secrets Manager**: Secrets not rotated in 90+ days
+- **ElastiCache**: Unencrypted clusters (at-rest and in-transit)
+
+Findings include:
+- Severity levels (CRITICAL, HIGH, MEDIUM, LOW)
+- CIS Benchmark control mappings
+- Remediation guidance
+- Export to JSON/CSV for compliance tracking
 
 ## Architecture
 
@@ -376,7 +418,8 @@ aws-inventory-manager/
 │   ├── cli/                # CLI entry point and commands
 │   ├── models/             # Data models (Snapshot, Inventory, Resource, etc.)
 │   ├── snapshot/           # Snapshot capture and inventory storage
-│   ├── delta/              # Delta calculation
+│   ├── delta/              # Delta calculation and configuration drift
+│   ├── security/           # Security scanning and CIS compliance
 │   ├── cost/               # Cost analysis
 │   ├── aws/                # AWS client utilities
 │   └── utils/              # Shared utilities
@@ -456,6 +499,7 @@ awsinv delta \
   [--resource-type <type>] \
   [--region <region>] \
   [--show-details] \
+  [--show-diff] \
   [--export <file.json|file.csv>] \
   [--profile <aws-profile>]
 
@@ -467,6 +511,19 @@ awsinv cost \
   [--end-date YYYY-MM-DD] \
   [--granularity DAILY|MONTHLY] \
   [--show-services] \
+  [--export <file.json|file.csv>] \
+  [--profile <aws-profile>]
+```
+
+### Security Commands
+
+```bash
+# Scan for security misconfigurations
+awsinv security scan \
+  [--inventory <inventory-name>] \
+  [--snapshot <snapshot-name>] \
+  [--severity <CRITICAL|HIGH|MEDIUM|LOW>] \
+  [--cis-only] \
   [--export <file.json|file.csv>] \
   [--profile <aws-profile>]
 ```
