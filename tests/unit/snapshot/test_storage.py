@@ -96,9 +96,7 @@ class TestSchemaVersionBackwardCompatibility:
         assert snapshot.resources[0].arn == "arn:aws:s3:::old-bucket"
         assert snapshot.resources[0].raw_config is None  # raw_config is None for v1.0
 
-    def test_write_v11_snapshot_with_raw_config(
-        self, temp_storage_dir: Path, sample_snapshot_v11: Snapshot
-    ) -> None:
+    def test_write_v11_snapshot_with_raw_config(self, temp_storage_dir: Path, sample_snapshot_v11: Snapshot) -> None:
         """Test that v1.1 snapshots with raw_config are saved correctly."""
         storage = SnapshotStorage(temp_storage_dir)
         filepath = storage.save_snapshot(sample_snapshot_v11)
@@ -115,9 +113,7 @@ class TestSchemaVersionBackwardCompatibility:
         assert "raw_config" in data["resources"][0]
         assert data["resources"][0]["raw_config"]["BucketName"] == "test-bucket"
 
-    def test_read_v11_snapshot_with_raw_config(
-        self, temp_storage_dir: Path, sample_snapshot_v11: Snapshot
-    ) -> None:
+    def test_read_v11_snapshot_with_raw_config(self, temp_storage_dir: Path, sample_snapshot_v11: Snapshot) -> None:
         """Test that v1.1 snapshots with raw_config can be loaded."""
         storage = SnapshotStorage(temp_storage_dir)
         storage.save_snapshot(sample_snapshot_v11)
