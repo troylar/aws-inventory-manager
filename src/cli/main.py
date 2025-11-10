@@ -978,7 +978,7 @@ def snapshot_create(
 
 
 @snapshot_app.command("list")
-def snapshot_list():
+def snapshot_list(profile: Optional[str] = typer.Option(None, "--profile", "-p", help="AWS profile name")):
     """List all available snapshots."""
     try:
         storage = SnapshotStorage(config.storage_path)
@@ -1013,7 +1013,10 @@ def snapshot_list():
 
 
 @snapshot_app.command("show")
-def snapshot_show(name: str = typer.Argument(..., help="Snapshot name to display")):
+def snapshot_show(
+    name: str = typer.Argument(..., help="Snapshot name to display"),
+    profile: Optional[str] = typer.Option(None, "--profile", "-p", help="AWS profile name"),
+):
     """Display detailed information about a snapshot."""
     try:
         storage = SnapshotStorage(config.storage_path)
@@ -1062,7 +1065,10 @@ def snapshot_show(name: str = typer.Argument(..., help="Snapshot name to display
 
 
 @snapshot_app.command("set-active")
-def snapshot_set_active(name: str = typer.Argument(..., help="Snapshot name to set as active")):
+def snapshot_set_active(
+    name: str = typer.Argument(..., help="Snapshot name to set as active"),
+    profile: Optional[str] = typer.Option(None, "--profile", "-p", help="AWS profile name"),
+):
     """Set a snapshot as the active snapshot.
 
     The active snapshot is used by default for delta and cost analysis.
@@ -1085,6 +1091,7 @@ def snapshot_set_active(name: str = typer.Argument(..., help="Snapshot name to s
 def snapshot_delete(
     name: str = typer.Argument(..., help="Snapshot name to delete"),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt"),
+    profile: Optional[str] = typer.Option(None, "--profile", "-p", help="AWS profile name"),
 ):
     """Delete a snapshot.
 
@@ -1732,6 +1739,7 @@ def security_scan(
     export: Optional[str] = typer.Option(None, "--export", help="Export findings to file"),
     format: str = typer.Option("json", "--format", "-f", help="Export format: json or csv"),
     cis_only: bool = typer.Option(False, "--cis-only", help="Show only findings with CIS Benchmark mappings"),
+    profile: Optional[str] = typer.Option(None, "--profile", "-p", help="AWS profile name"),
 ):
     """Scan a snapshot for security misconfigurations and compliance issues.
 
@@ -1770,14 +1778,17 @@ def security_scan(
             console.print("✗ Error: Must specify either --snapshot or --inventory", style="bold red")
             raise typer.Exit(code=1)
 
+        # Use profile parameter if provided, otherwise use config
+        aws_profile = profile if profile else config.aws_profile
+
         # Load snapshot
-        storage = SnapshotStorage(storage_dir)
+        storage = SnapshotStorage(storage_dir or config.storage_path)
 
         if inventory:
             # Load active snapshot from inventory
             # Need AWS credentials to get account ID
-            identity = validate_credentials()
-            inv_storage = InventoryStorage(storage_dir)
+            identity = validate_credentials(aws_profile)
+            inv_storage = InventoryStorage(storage_dir or config.storage_path)
             inv = inv_storage.get_by_name(inventory, identity["account_id"])
             if not inv.active_snapshot:
                 console.print(
