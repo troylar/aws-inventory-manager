@@ -572,9 +572,7 @@ def inventory_migrate(
         raise
     except Exception as e:
         console.print(f"✗ Error during migration: {e}", style="bold red")
-        import traceback
-
-        traceback.print_exc()
+        logger.exception("Error in inventory migrate command")
         raise typer.Exit(code=2)
 
 
@@ -667,9 +665,7 @@ def inventory_delete(
         raise
     except Exception as e:
         console.print(f"✗ Error deleting inventory: {e}", style="bold red")
-        import traceback
-
-        traceback.print_exc()
+        logger.exception("Error in inventory delete command")
         raise typer.Exit(code=2)
 
 
@@ -971,9 +967,7 @@ def snapshot_create(
         raise typer.Exit(code=3)
     except Exception as e:
         console.print(f"✗ Error creating snapshot: {e}", style="bold red")
-        import traceback
-
-        traceback.print_exc()
+        logger.exception("Error in snapshot create command")
         raise typer.Exit(code=2)
 
 
@@ -1534,9 +1528,7 @@ def delta(
         raise typer.Exit(code=1)
     except Exception as e:
         console.print(f"✗ Error calculating delta: {e}", style="bold red")
-        import traceback
-
-        traceback.print_exc()
+        logger.exception("Error in delta command")
         raise typer.Exit(code=2)
 
 
@@ -1717,9 +1709,7 @@ def cost(
         raise typer.Exit(code=1)
     except Exception as e:
         console.print(f"✗ Error analyzing costs: {e}", style="bold red")
-        import traceback
-
-        traceback.print_exc()
+        logger.exception("Error in cost command")
         raise typer.Exit(code=2)
 
 
@@ -1877,14 +1867,15 @@ def security_scan(
                 console.print(f"✗ Invalid format: {format}. Must be 'json' or 'csv'", style="bold red")
                 raise typer.Exit(code=1)
 
+    except typer.Exit:
+        # Re-raise Typer exit codes (for early returns like missing params)
+        raise
     except FileNotFoundError as e:
         console.print(f"✗ Snapshot not found: {e}", style="bold red")
         raise typer.Exit(code=1)
     except Exception as e:
         console.print(f"✗ Error during security scan: {e}", style="bold red")
-        import traceback
-
-        traceback.print_exc()
+        logger.exception("Error in security scan command")
         raise typer.Exit(code=2)
 
 
