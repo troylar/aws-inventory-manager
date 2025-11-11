@@ -219,3 +219,4 @@ specs/
 .DS_Store
 Thumbs.db
 *.swp
+*.cover
