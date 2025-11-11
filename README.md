@@ -2,438 +2,640 @@
 
 # 📦 AWS Inventory Manager
 
-**Track, snapshot, and manage your AWS resources with cost analysis**
+### *Your AWS Environment, Tracked, Secured, and Understood*
 
 [![CI](https://github.com/troylar/aws-inventory-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/troylar/aws-inventory-manager/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/troylar/aws-inventory-manager/branch/main/graph/badge.svg)](https://codecov.io/gh/troylar/aws-inventory-manager)
 [![PyPI version](https://img.shields.io/pypi/v/aws-inventory-manager.svg)](https://pypi.org/project/aws-inventory-manager/)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Python CLI tool that captures point-in-time snapshots of AWS resources organized by inventory, tracks resource deltas over time, scans for security vulnerabilities, analyzes costs per inventory, and provides restoration capabilities.
+**Point-in-time snapshots** • **Security scanning** • **Configuration drift** • **Cost analysis** • **27 AWS services**
+
+[Quick Start](#quick-start) • [Features](#features) • [Documentation](#documentation) • [Contributing](#contributing)
 
 </div>
 
 ---
 
-## Features
+## 🎯 Why AWS Inventory Manager?
 
-- **📦 Inventory Management**: Organize snapshots into named inventories with optional tag-based filters
-- **📸 Resource Snapshots**: Capture complete inventory of AWS resources across multiple regions
-- **📋 Snapshot Reporting**: Generate comprehensive reports with filtering, detailed views, and export to JSON/CSV/TXT
-- **🔄 Delta Tracking**: Identify resources added, modified, or removed since a snapshot
-- **🔍 Configuration Drift Details**: Field-level comparison showing exactly what changed in modified resources
-- **🔒 Security Scanning**: Automated security posture assessment with CIS AWS Foundations Benchmark mapping
-- **💰 Cost Analysis**: Analyze costs for resources within a specific inventory
-- **🔧 Resource Restoration**: Remove resources added since a snapshot to return to that state
-- **🏷️ Filtered Snapshots**: Create snapshots filtered by tags for specific teams or environments
-- **🔀 Multi-Account Support**: Manage inventories across multiple AWS accounts
-- **📊 Snapshot Management**: Manage multiple snapshots per inventory with active snapshot tracking
+Managing AWS environments is complex. Resources multiply, configurations drift, security issues creep in, and costs spiral. AWS Inventory Manager gives you **visibility, control, and confidence**.
 
-## Quick Start
+### What You Get
+
+```bash
+# Capture your entire AWS environment in seconds
+awsinv snapshot create baseline --regions us-east-1,us-west-2
+
+# Know exactly what changed
+awsinv delta --show-diff  # See field-level configuration changes
+
+# Find security issues before they find you
+awsinv security scan --severity HIGH  # CIS Benchmark aligned
+
+# Track costs by team, environment, or account
+awsinv cost --inventory team-alpha
+```
+
+### The Problem It Solves
+
+- **"What changed?"** - See exactly which resources were added, removed, or modified, down to the field level
+- **"Are we secure?"** - Automated security scanning against CIS AWS Foundations Benchmark
+- **"How much does this cost?"** - Per-inventory cost tracking and attribution
+- **"Can we go back?"** - Point-in-time snapshots let you understand and restore previous states
+- **"Who owns what?"** - Tag-based filtering and team/environment isolation
+
+---
+
+## ✨ Features
+
+<table>
+<tr>
+<td width="50%">
+
+### 📸 **Snapshot & Track**
+- Capture 27 AWS services across regions
+- Point-in-time resource inventory
+- Tag-based filtering (team, env, project)
+- Multi-account support
+- Export to JSON/CSV/TXT
+
+</td>
+<td width="50%">
+
+### 🔍 **Configuration Drift**
+- Field-level change detection
+- See exactly what changed: tags, config, security
+- Color-coded terminal output
+- Before/after comparison
+- Drift reports in JSON
+
+</td>
+</tr>
+<tr>
+<td>
+
+### 🔒 **Security Scanning**
+- 12+ security checks (CIS aligned)
+- Find public S3 buckets, open ports, old credentials
+- Severity levels: CRITICAL → LOW
+- Remediation guidance
+- Compliance reports (JSON/CSV)
+
+</td>
+<td>
+
+### 💰 **Cost Analysis**
+- Per-inventory cost tracking
+- Compare costs across teams/environments
+- Date range analysis
+- Service-level breakdown
+- Cost attribution by tags
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🚀 Quick Start
 
 ### Installation
 
 ```bash
-# Install from PyPI
 pip install aws-inventory-manager
-
-# Or install from source
-git clone https://github.com/troylar/aws-inventory-manager.git
-cd aws-inventory-manager
-pip install -e .
 ```
 
-### Prerequisites
+### 60-Second Demo
 
-- Python 3.8 or higher
-- AWS CLI configured with credentials
-- IAM permissions for resource read/write operations
-
-### Getting Started in 5 Minutes
-
-Follow these steps for a complete walkthrough from setup to cost analysis:
-
-**1. Create an inventory** (a named collection for organizing snapshots)
 ```bash
-awsinv inventory create prod-baseline --description "Production baseline resources"
+# 1. Create an inventory (logical grouping)
+awsinv inventory create production --description "Production resources"
+
+# 2. Take a snapshot
+awsinv snapshot create baseline --regions us-east-1 --inventory production
+
+# 3. See what you have
+awsinv snapshot report --inventory production
+
+# 4. Scan for security issues
+awsinv security scan --inventory production
+
+# 5. Track changes over time
+awsinv delta --inventory production --show-diff
 ```
 
-**2. Take your first snapshot** (capture current AWS resources)
+**That's it!** You now have visibility into your AWS environment.
+
+---
+
+## 📖 Complete Walkthrough
+
+### Step 1: Create Your First Inventory
+
+An **inventory** is a named collection that organizes your snapshots.
+
 ```bash
-awsinv snapshot create initial --regions us-east-1 --inventory prod-baseline
+awsinv inventory create prod-baseline \
+  --description "Production baseline resources"
 ```
-This captures all resources in `us-east-1` and stores them in the `prod-baseline` inventory.
 
-**3. Make changes to your AWS environment** (optional)
-- Deploy new resources, update configurations, etc.
-- Then take another snapshot to track what changed
+<details>
+<summary><b>💡 Pro Tip:</b> Use tag filters for team/environment isolation</summary>
 
-**4. View snapshot report** (see what's in your snapshot)
 ```bash
-# Summary view with resource counts by service, region, and type
+# Track only resources belonging to Team Alpha
+awsinv inventory create team-alpha \
+  --include-tags "Team=Alpha" \
+  --description "Team Alpha resources"
+
+# Exclude development resources
+awsinv inventory create non-dev \
+  --exclude-tags "Environment=development"
+```
+</details>
+
+---
+
+### Step 2: Capture Your AWS Environment
+
+Take a **snapshot** to capture the current state of your AWS resources.
+
+```bash
+awsinv snapshot create initial \
+  --regions us-east-1 \
+  --inventory prod-baseline
+```
+
+**What gets captured:**
+- 27 AWS services (S3, EC2, RDS, Lambda, EFS, ElastiCache, and more)
+- Full resource configurations
+- Tags, metadata, encryption settings
+- All in < 30 seconds
+
+<details>
+<summary><b>What's captured?</b> Click to see all 27 services</summary>
+
+- **Compute:** EC2, Lambda, ECS, EKS
+- **Storage:** S3, EFS, EBS Volumes
+- **Database:** RDS, DynamoDB, ElastiCache
+- **Networking:** VPCs, Security Groups, Load Balancers, Route53
+- **Security:** IAM, KMS, Secrets Manager
+- **DevOps:** CodePipeline, CodeBuild, CloudFormation
+- **Monitoring:** CloudWatch, EventBridge, SNS, SQS
+- **More:** Step Functions, WAF, Systems Manager, Backup
+
+</details>
+
+---
+
+### Step 3: Generate Reports
+
+```bash
+# Summary view - see resource counts by service
 awsinv snapshot report --inventory prod-baseline
 
-# Detailed view showing all resources with tags and metadata
+# Detailed view - see all resources with full metadata
 awsinv snapshot report --inventory prod-baseline --detailed
 
 # Filter by resource type
-awsinv snapshot report --inventory prod-baseline --resource-type ec2
+awsinv snapshot report --resource-type s3 --inventory prod-baseline
 
 # Export to JSON, CSV, or TXT
-awsinv snapshot report --inventory prod-baseline --export report.json
+awsinv snapshot report --export report.json --inventory prod-baseline
 ```
 
-**5. Compare snapshots** (see what changed)
+**Example output:**
+```
+Resources by service:
+┏━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┓
+┃ Service               ┃ Count ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━┩
+│ AWS::EC2::Instance    │     5 │
+│ AWS::S3::Bucket       │    12 │
+│ AWS::RDS::DBInstance  │     3 │
+│ AWS::Lambda::Function │     8 │
+└───────────────────────┴───────┘
+```
+
+---
+
+### Step 4: Track Changes (Delta)
+
+See exactly what changed since your baseline.
+
 ```bash
-# See what resources were added, removed, or modified
+# Basic delta - shows which resources changed
 awsinv delta --snapshot initial --inventory prod-baseline
 
-# See field-level configuration changes (configuration drift)
+# Enhanced delta - shows WHAT changed (field-level)
 awsinv delta --snapshot initial --inventory prod-baseline --show-diff
 ```
-This shows all resources added, removed, or modified since the `initial` snapshot. Use `--show-diff` to see exactly what fields changed in modified resources.
 
-**6. Scan for security issues**
+**Field-level drift output:**
+```
+Configuration Changes:
+  Instance i-abc123:
+    InstanceType: t2.micro → t2.small
+    Tags.Environment: dev → prod
+
+Security Changes:
+  Bucket my-bucket:
+    PublicAccessBlockConfiguration.BlockPublicAcls: true → false  ⚠️
+```
+
+<details>
+<summary><b>🎨 Color-coded output</b></summary>
+
+- 🔴 **Red** - Removed fields
+- 🟢 **Green** - Added fields
+- 🟡 **Yellow** - Security-critical changes
+- 🔵 **Cyan** - Configuration changes
+
+</details>
+
+---
+
+### Step 5: Scan for Security Issues
+
+Find misconfigurations **before** they become incidents.
+
 ```bash
-# Scan current resources for security misconfigurations
-awsinv security scan --snapshot initial --inventory prod-baseline
+# Scan for all security issues
+awsinv security scan --inventory prod-baseline
 
-# Filter by severity (CRITICAL, HIGH, MEDIUM, LOW)
-awsinv security scan --severity HIGH --inventory prod-baseline
+# Filter by severity
+awsinv security scan --severity CRITICAL --inventory prod-baseline
 
 # Show only CIS Benchmark findings
 awsinv security scan --cis-only --inventory prod-baseline
 
-# Export findings to JSON or CSV
+# Export for compliance reporting
 awsinv security scan --export findings.json --inventory prod-baseline
 ```
-This scans for security issues like public S3 buckets, open security groups, unencrypted resources, old credentials, and more.
 
-**7. Analyze costs**
+**Security checks include:**
+
+| Check | Severity | CIS Control |
+|-------|----------|-------------|
+| Public S3 buckets | **CRITICAL** | 2.1.5 |
+| Open SSH/RDP ports (22, 3389) | **HIGH** | 5.2, 5.3 |
+| Open database ports (3306, 5432, etc.) | **HIGH** | 5.2, 5.3 |
+| Publicly accessible RDS | **HIGH** | - |
+| Unencrypted storage (RDS, ElastiCache) | **HIGH** | - |
+| EC2 with IMDSv1 | **MEDIUM** | - |
+| IAM keys > 90 days old | **MEDIUM** | 1.4 |
+| Secrets not rotated | **MEDIUM** | - |
+
+**Example output:**
+```
+🔍 Scanning snapshot: prod-baseline
+
+Security Findings (5 issues):
+
+[CRITICAL] Public S3 Bucket (CIS 2.1.5)
+  Resource: arn:aws:s3:::my-public-bucket
+  Finding: Bucket is publicly accessible
+  Remediation: Enable S3 Block Public Access settings
+
+[HIGH] Security Group - Open SSH
+  Resource: sg-12345 (web-servers)
+  Finding: Port 22 open to 0.0.0.0/0
+  Remediation: Restrict SSH access to specific IP ranges
+
+CIS Benchmark Summary:
+  Controls checked: 6  Failed: 2  Passed: 4
+```
+
+---
+
+### Step 6: Analyze Costs
+
+Track and attribute AWS costs by inventory.
+
 ```bash
 # Costs since snapshot was created
 awsinv cost --snapshot initial --inventory prod-baseline
 
 # Costs for specific date range
 awsinv cost --snapshot initial --inventory prod-baseline \
-  --start-date 2025-01-01 --end-date 2025-01-31
+  --start-date 2025-01-01 \
+  --end-date 2025-01-31
+
+# Show breakdown by service
+awsinv cost --inventory prod-baseline --show-services
 ```
 
-**8. List your resources**
+---
+
+## 🎯 Real-World Use Cases
+
+### 1. Multi-Team Cost Attribution
+
 ```bash
-# List all inventories
-awsinv inventory list
+# Create team-specific inventories
+awsinv inventory create team-frontend --include-tags "Team=Frontend"
+awsinv inventory create team-backend --include-tags "Team=Backend"
 
-# List snapshots in your inventory
-awsinv snapshot list --inventory prod-baseline
-
-# Show snapshot details
-awsinv snapshot show initial --inventory prod-baseline
+# Track costs per team
+awsinv cost --inventory team-frontend
+awsinv cost --inventory team-backend
 ```
 
-**Advanced: Use AWS profiles and tag filtering**
+### 2. Security Compliance Audits
+
 ```bash
-# Use a specific AWS profile
-awsinv --profile production snapshot create initial --regions us-east-1 --inventory prod-baseline
+# Scan production for CIS compliance
+awsinv security scan --inventory production --cis-only --export cis-audit.csv
 
-# Filter snapshot by tags (only include resources with specific tags)
-awsinv snapshot create prod-only --regions us-east-1 \
-  --include-tags Environment=production,Team=platform
-
-# Exclude resources with certain tags
-awsinv snapshot create non-dev --regions us-east-1 \
-  --exclude-tags Environment=development
+# Track remediation progress over time
+awsinv snapshot create after-remediation --inventory production
+awsinv security scan --inventory production
 ```
 
-That's it! You're now tracking AWS resources, comparing changes, and analyzing costs.
+### 3. Configuration Drift Detection
 
-### Configuration
-
-The tool stores snapshots in `~/.snapshots` by default. You can customize this using:
-
-**Environment Variable:**
 ```bash
+# Baseline before deployment
+awsinv snapshot create pre-deploy --inventory production
+
+# Deploy changes...
+
+# See exactly what changed
+awsinv delta --snapshot pre-deploy --show-diff --inventory production
+```
+
+### 4. Multi-Account Management
+
+```bash
+# Snapshot production account
+awsinv --profile prod-account snapshot create prod-baseline
+
+# Snapshot staging account
+awsinv --profile staging-account snapshot create staging-baseline
+
+# Compare environments
+awsinv delta --snapshot prod-baseline --profile prod-account
+awsinv delta --snapshot staging-baseline --profile staging-account
+```
+
+---
+
+## 📊 Supported AWS Services (27 Total)
+
+<table>
+<tr>
+<td width="25%">
+
+**Compute**
+- EC2 Instances
+- Lambda Functions
+- ECS Clusters
+- EKS Clusters
+
+</td>
+<td width="25%">
+
+**Storage**
+- S3 Buckets
+- EBS Volumes
+- EFS File Systems
+- Backup Vaults
+
+</td>
+<td width="25%">
+
+**Database**
+- RDS Instances
+- DynamoDB Tables
+- ElastiCache Clusters
+- Aurora Clusters
+
+</td>
+<td width="25%">
+
+**Security**
+- IAM Roles/Users
+- KMS Keys
+- Secrets Manager
+- Security Groups
+
+</td>
+</tr>
+<tr>
+<td>
+
+**Networking**
+- VPCs
+- Subnets
+- Load Balancers
+- Route53 Zones
+
+</td>
+<td>
+
+**DevOps**
+- CodePipeline
+- CodeBuild
+- CloudFormation
+- Step Functions
+
+</td>
+<td>
+
+**Monitoring**
+- CloudWatch Alarms
+- CloudWatch Logs
+- SNS Topics
+- SQS Queues
+
+</td>
+<td>
+
+**Other**
+- API Gateway
+- EventBridge
+- WAF
+- Systems Manager
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🔒 Security Scanning Details
+
+### What Gets Scanned
+
+The security scanner performs **12+ checks** aligned with **CIS AWS Foundations Benchmark**:
+
+```bash
+awsinv security scan --inventory production
+```
+
+| Category | Checks | Severity |
+|----------|--------|----------|
+| **Storage** | Public S3 buckets, unencrypted RDS/ElastiCache | CRITICAL / HIGH |
+| **Network** | Open ports (SSH, RDP, databases) to 0.0.0.0/0 | HIGH |
+| **Compute** | EC2 with IMDSv1 enabled | MEDIUM |
+| **IAM** | Access keys older than 90 days | MEDIUM |
+| **Secrets** | Secrets Manager not rotated in 90+ days | MEDIUM |
+
+### Output Formats
+
+```bash
+# Terminal output with colors
+awsinv security scan --inventory prod
+
+# JSON for automation
+awsinv security scan --inventory prod --export findings.json
+
+# CSV for spreadsheets
+awsinv security scan --inventory prod --export findings.csv --format csv
+```
+
+---
+
+## 🛠️ Configuration
+
+### Storage Location
+
+By default, snapshots are stored in `~/.snapshots`. Customize this:
+
+```bash
+# Environment variable (persistent)
 export AWS_INVENTORY_STORAGE_PATH=/path/to/snapshots
-```
 
-**CLI Parameter** (highest priority):
-```bash
+# CLI parameter (one-time)
 awsinv --storage-path /custom/path inventory list
 ```
 
-**Precedence:** CLI parameter > Environment variable > Default (`~/.snapshots`)
+**Precedence:** CLI parameter > Environment variable > Default
 
-### Basic Usage
+### AWS Profiles
 
-```bash
-# Create a named inventory for organizing snapshots
-awsinv inventory create infrastructure \
-  --description "Core infrastructure resources"
-
-# Create a filtered inventory for a specific team
-awsinv inventory create team-alpha \
-  --description "Team Alpha resources" \
-  --include-tags "Team=Alpha"
-
-# Take a snapshot (automatically uses 'default' inventory if none specified)
-awsinv snapshot create
-
-# Take a snapshot within a specific inventory
-awsinv snapshot create --inventory infrastructure
-
-# List all inventories
-awsinv inventory list
-
-# View what's changed since the snapshot
-awsinv delta
-
-# View delta for specific inventory
-awsinv delta --inventory team-alpha
-
-# Analyze costs for a specific inventory
-awsinv cost --inventory infrastructure
-
-# Analyze costs for team inventory
-awsinv cost --inventory team-alpha
-
-# List all snapshots
-awsinv snapshot list
-
-# Migrate legacy snapshots to inventory structure
-awsinv inventory migrate
-```
-
-## Use Cases
-
-### Multi-Account Resource Management
-Organize snapshots by AWS account and purpose. Track costs per account.
+Use AWS CLI profiles for multi-account management:
 
 ```bash
-# Create inventory for core infrastructure account
-awsinv inventory create infrastructure \
-  --description "Core infrastructure resources"
-
-# Take snapshot
-awsinv snapshot create --inventory infrastructure
-
-# Analyze costs for this inventory
-awsinv cost --inventory infrastructure
+# All commands support --profile
+awsinv --profile production snapshot create baseline
+awsinv --profile staging security scan
 ```
 
-### Team-Based Resource Tracking
-Create filtered inventories for different teams to track their resources and costs independently.
+---
 
-```bash
-# Create team-specific inventories with tag filters
-awsinv inventory create team-alpha \
-  --include-tags "Team=Alpha" \
-  --description "Team Alpha resources"
+## 🏗️ Architecture
 
-awsinv inventory create team-beta \
-  --include-tags "Team=Beta" \
-  --description "Team Beta resources"
-
-# Take filtered snapshots for each team
-awsinv snapshot create --inventory team-alpha
-awsinv snapshot create --inventory team-beta
-
-# Analyze costs per team
-awsinv cost --inventory team-alpha
-awsinv cost --inventory team-beta
+```
+┌─────────────────────────────────────────────────────────┐
+│                     AWS Inventory Manager               │
+├─────────────────────────────────────────────────────────┤
+│  CLI (Typer + Rich)                                     │
+│    ├─ inventory    (Organize snapshots)                 │
+│    ├─ snapshot     (Capture resources)                  │
+│    ├─ delta        (Track changes)                      │
+│    ├─ security     (Scan misconfigurations)             │
+│    └─ cost         (Analyze spending)                   │
+├─────────────────────────────────────────────────────────┤
+│  Core Engine                                            │
+│    ├─ 27 Resource Collectors (boto3)                    │
+│    ├─ Configuration Differ (field-level)                │
+│    ├─ Security Scanner (CIS aligned)                    │
+│    └─ Cost Analyzer (AWS Cost Explorer)                 │
+├─────────────────────────────────────────────────────────┤
+│  Storage (YAML)                                         │
+│    ├─ ~/.snapshots/inventories.yaml                     │
+│    └─ ~/.snapshots/<snapshot-name>.yaml                 │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### Environment Isolation
-Separate production, staging, and development resources for independent tracking.
+**Tech Stack:**
+- **Language:** Python 3.8+
+- **CLI:** Typer (beautiful terminal UI with Rich)
+- **AWS SDK:** boto3
+- **Storage:** YAML (human-readable)
+- **Testing:** pytest (509 tests, 52% coverage)
 
-```bash
-# Create environment-specific inventories
-awsinv inventory create production \
-  --include-tags "Environment=production"
+---
 
-awsinv inventory create staging \
-  --include-tags "Environment=staging"
-
-# Track changes for each environment
-awsinv delta --inventory production
-awsinv delta --inventory staging
-
-# Analyze costs per environment
-awsinv cost --inventory production
-awsinv cost --inventory staging
-```
-
-## Documentation
-
-For complete documentation including installation guide, command reference, usage examples, and best practices, run:
-
-```bash
-awsinv --help
-awsinv quickstart
-```
-
-## Supported AWS Services
-
-The tool captures resources from **27 AWS services**:
-
-- **IAM**: Roles, Users, Groups, Customer-Managed Policies
-- **Lambda**: Functions, Layers
-- **S3**: Buckets (with versioning, encryption metadata)
-- **EC2**: Instances, Volumes, VPCs, Security Groups, Subnets, VPC Endpoints (Interface & Gateway)
-- **RDS**: DB Instances, DB Clusters (Aurora)
-- **EFS**: File Systems (with encryption, performance mode)
-- **ElastiCache**: Redis and Memcached Clusters (with encryption settings)
-- **CloudWatch**: Alarms (Metric & Composite), Log Groups
-- **SNS**: Topics
-- **SQS**: Queues
-- **DynamoDB**: Tables
-- **ELB**: Load Balancers (Classic ELB, ALB, NLB, GWLB)
-- **CloudFormation**: Stacks
-- **API Gateway**: REST APIs, HTTP APIs, WebSocket APIs
-- **EventBridge**: Event Buses, Event Rules
-- **Secrets Manager**: Secrets (metadata only, values excluded)
-- **KMS**: Customer-Managed Keys (with rotation status)
-- **Systems Manager**: Parameter Store Parameters, SSM Documents
-- **Route53**: Hosted Zones (public and private)
-- **ECS**: Clusters, Services, Task Definitions
-- **EKS**: Clusters, Node Groups, Fargate Profiles
-- **Step Functions**: State Machines
-- **WAF**: Web ACLs (Regional and CloudFront)
-- **CodePipeline**: CI/CD Pipelines
-- **CodeBuild**: Build Projects
-- **Backup**: Backup Plans, Backup Vaults
-
-## Security Checks
-
-The security scanner detects **12+ security misconfigurations** aligned with CIS AWS Foundations Benchmark:
-
-- **S3**: Public buckets (CIS 2.1.5)
-- **Security Groups**: Open SSH (22), RDP (3389), MySQL (3306), PostgreSQL (5432), MSSQL (1433), MongoDB (27017) to 0.0.0.0/0 (CIS 5.2, 5.3)
-- **RDS**: Publicly accessible databases, unencrypted storage
-- **EC2**: IMDSv1 enabled (should require IMDSv2)
-- **IAM**: Access keys older than 90 days (CIS 1.4)
-- **Secrets Manager**: Secrets not rotated in 90+ days
-- **ElastiCache**: Unencrypted clusters (at-rest and in-transit)
-
-Findings include:
-- Severity levels (CRITICAL, HIGH, MEDIUM, LOW)
-- CIS Benchmark control mappings
-- Remediation guidance
-- Export to JSON/CSV for compliance tracking
-
-## Architecture
-
-- **Language**: Python 3.8+
-- **CLI Framework**: Typer
-- **AWS SDK**: boto3
-- **Output**: Rich terminal UI
-- **Storage**: Local YAML files
-
-## Development
+## 🧪 Development
 
 ### Setup
 
 ```bash
-# Install development dependencies
+# Clone and install
+git clone https://github.com/troylar/aws-inventory-manager.git
+cd aws-inventory-manager
 pip install -e ".[dev]"
 
-# Verify installation
+# Verify
 awsinv --help
 ```
 
 ### Testing
 
-Use invoke for all development tasks:
-
 ```bash
-# Run all tests with coverage
-invoke test
-
-# Run unit tests only
-invoke test-unit
-
-# Run integration tests only
-invoke test-integration
-
-# Run tests with verbose output
-invoke test --verbose
-
-# Generate HTML coverage report
-invoke coverage-report
+invoke test              # Run all tests with coverage
+invoke test-unit         # Unit tests only
+invoke test-integration  # Integration tests only
+invoke coverage-report   # Generate HTML coverage report
 ```
 
 ### Code Quality
 
 ```bash
-# Run all quality checks (format, lint, typecheck)
-invoke quality
-
-# Auto-fix formatting and linting issues
-invoke quality --fix
-
-# Format code
-invoke format
-
-# Check formatting without changes
-invoke format --check
-
-# Lint code
-invoke lint
-
-# Auto-fix linting issues
-invoke lint --fix
-
-# Type check
-invoke typecheck
+invoke quality           # Run all checks (format, lint, typecheck)
+invoke quality --fix     # Auto-fix issues
+invoke format            # Format with black
+invoke lint              # Lint with ruff
+invoke typecheck         # Type check with mypy
 ```
 
 ### Build & Release
 
 ```bash
-# Clean build artifacts
-invoke clean
-
-# Build package
-invoke build
-
-# Show version
-invoke version
-
-# Run all CI checks (quality + tests)
-invoke ci
+invoke clean    # Clean build artifacts
+invoke build    # Build package
+invoke version  # Show version
+invoke ci       # Run all CI checks
 ```
 
-### Available Invoke Tasks
+---
+
+## 📚 Command Reference
+
+### Quick Command Index
 
 ```bash
-# List all available tasks
-invoke --list
+# INVENTORY MANAGEMENT
+awsinv inventory create <name> [--description "..."] [--include-tags "..."]
+awsinv inventory list
+awsinv inventory show <name>
+awsinv inventory delete <name>
+
+# SNAPSHOTS
+awsinv snapshot create [name] [--regions us-east-1] [--inventory <name>]
+awsinv snapshot list [--inventory <name>]
+awsinv snapshot report [--inventory <name>] [--detailed] [--export file.json]
+awsinv snapshot show <name>
+
+# ANALYSIS
+awsinv delta [--snapshot <name>] [--show-diff] [--inventory <name>]
+awsinv security scan [--inventory <name>] [--severity HIGH] [--export findings.json]
+awsinv cost [--inventory <name>] [--start-date YYYY-MM-DD] [--show-services]
+
+# GLOBAL OPTIONS
+--profile <aws-profile>        # AWS CLI profile
+--storage-path <path>          # Custom snapshot storage location
+--help                         # Show help for any command
 ```
 
-## Project Structure
+### Full Command Documentation
 
-```
-aws-inventory-manager/
-├── src/
-│   ├── cli/                # CLI entry point and commands
-│   ├── models/             # Data models (Snapshot, Inventory, Resource, etc.)
-│   ├── snapshot/           # Snapshot capture and inventory storage
-│   ├── delta/              # Delta calculation and configuration drift
-│   ├── security/           # Security scanning and CIS compliance
-│   ├── cost/               # Cost analysis
-│   ├── aws/                # AWS client utilities
-│   └── utils/              # Shared utilities
-├── tests/
-│   ├── unit/               # Unit tests
-│   └── integration/        # Integration tests
-└── ~/.snapshots/           # Default snapshot storage
-    ├── inventories.yaml    # Inventory metadata
-    └── snapshots/          # Individual snapshot files
-```
-
-## Command Reference
-
-### Inventory Commands
+<details>
+<summary><b>Inventory Commands</b></summary>
 
 ```bash
 # Create an inventory
@@ -443,22 +645,23 @@ awsinv inventory create <name> \
   [--exclude-tags "Key3=Value3"] \
   [--profile <aws-profile>]
 
-# List all inventories for current account
+# List all inventories
 awsinv inventory list [--profile <aws-profile>]
 
-# Show detailed inventory information
+# Show inventory details
 awsinv inventory show <name> [--profile <aws-profile>]
 
 # Delete an inventory
-awsinv inventory delete <name> \
-  [--force] \
-  [--profile <aws-profile>]
+awsinv inventory delete <name> [--force] [--profile <aws-profile>]
 
-# Migrate legacy snapshots to inventory structure
+# Migrate legacy snapshots
 awsinv inventory migrate [--profile <aws-profile>]
 ```
 
-### Snapshot Commands
+</details>
+
+<details>
+<summary><b>Snapshot Commands</b></summary>
 
 ```bash
 # Create a snapshot
@@ -489,7 +692,10 @@ awsinv snapshot list [--profile <aws-profile>]
 awsinv snapshot show <name> [--profile <aws-profile>]
 ```
 
-### Analysis Commands
+</details>
+
+<details>
+<summary><b>Analysis Commands</b></summary>
 
 ```bash
 # View resource delta
@@ -503,7 +709,7 @@ awsinv delta \
   [--export <file.json|file.csv>] \
   [--profile <aws-profile>]
 
-# Analyze costs for an inventory
+# Analyze costs
 awsinv cost \
   [--inventory <inventory-name>] \
   [--snapshot <snapshot-name>] \
@@ -513,12 +719,8 @@ awsinv cost \
   [--show-services] \
   [--export <file.json|file.csv>] \
   [--profile <aws-profile>]
-```
 
-### Security Commands
-
-```bash
-# Scan for security misconfigurations
+# Security scan
 awsinv security scan \
   [--inventory <inventory-name>] \
   [--snapshot <snapshot-name>] \
@@ -528,21 +730,64 @@ awsinv security scan \
   [--profile <aws-profile>]
 ```
 
-## Contributing
-
-Contributions are welcome! Please read the contributing guidelines before submitting pull requests.
-
-## License
-
-MIT License - see LICENSE file for details
-
-## Support
-
-- Report issues: https://github.com/troylar/aws-inventory-manager/issues
-- Documentation: https://github.com/troylar/aws-inventory-manager#readme
+</details>
 
 ---
 
-**Version**: 0.3.0
-**Status**: Alpha
-**Python**: 3.8 - 3.13
+## 🤝 Contributing
+
+We welcome contributions! Here's how to get started:
+
+1. **Fork the repository**
+2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
+3. **Make your changes**
+4. **Run tests** (`invoke test`)
+5. **Run quality checks** (`invoke quality`)
+6. **Commit** (`git commit -m 'feat: add amazing feature'`)
+7. **Push** (`git push origin feature/amazing-feature`)
+8. **Open a Pull Request**
+
+### Development Guidelines
+
+- Follow existing code style (enforced by black, ruff, mypy)
+- Write tests for new features
+- Update documentation
+- Keep commits atomic and well-described
+
+---
+
+## 📜 License
+
+MIT License - see [LICENSE](LICENSE) for details
+
+---
+
+## 🆘 Support
+
+- **Issues:** [GitHub Issues](https://github.com/troylar/aws-inventory-manager/issues)
+- **Documentation:** [README](https://github.com/troylar/aws-inventory-manager#readme)
+- **Discussions:** [GitHub Discussions](https://github.com/troylar/aws-inventory-manager/discussions)
+
+---
+
+## 🎉 Acknowledgments
+
+Built with:
+- [Typer](https://typer.tiangolo.com/) - Beautiful CLI framework
+- [Rich](https://rich.readthedocs.io/) - Terminal formatting
+- [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html) - AWS SDK
+- [pytest](https://pytest.org/) - Testing framework
+
+---
+
+<div align="center">
+
+**Made with ❤️ for AWS practitioners**
+
+[![Star on GitHub](https://img.shields.io/github/stars/troylar/aws-inventory-manager?style=social)](https://github.com/troylar/aws-inventory-manager)
+
+**Version** 0.3.0 • **Python** 3.8 - 3.13 • **Status** Alpha
+
+[⬆ Back to Top](#-aws-inventory-manager)
+
+</div>
