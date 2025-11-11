@@ -124,9 +124,7 @@ class TestResourceDeleter:
 
     @patch("src.restore.deleter.create_boto_client")
     @patch("src.restore.deleter.time.sleep")
-    def test_delete_retries_on_dependency_violation(
-        self, mock_sleep: Mock, mock_create_client: Mock
-    ) -> None:
+    def test_delete_retries_on_dependency_violation(self, mock_sleep: Mock, mock_create_client: Mock) -> None:
         """Test deletion retries on dependency violations."""
         mock_client = Mock()
         error_response = {
@@ -160,9 +158,7 @@ class TestResourceDeleter:
 
     @patch("src.restore.deleter.create_boto_client")
     @patch("src.restore.deleter.time.sleep")
-    def test_delete_fails_after_max_retries(
-        self, mock_sleep: Mock, mock_create_client: Mock
-    ) -> None:
+    def test_delete_fails_after_max_retries(self, mock_sleep: Mock, mock_create_client: Mock) -> None:
         """Test deletion fails after exhausting retries."""
         mock_client = Mock()
         error_response = {
@@ -348,9 +344,7 @@ class TestResourceDeleter:
         )
 
     @patch("src.restore.deleter.create_boto_client")
-    def test_delete_handles_unexpected_exception_in_deletion_loop(
-        self, mock_create_client: Mock
-    ) -> None:
+    def test_delete_handles_unexpected_exception_in_deletion_loop(self, mock_create_client: Mock) -> None:
         """Test deletion handles unexpected exception in main loop."""
         mock_client = Mock()
         # Raise unexpected exception (not ClientError)
@@ -372,9 +366,7 @@ class TestResourceDeleter:
         assert mock_client.terminate_instances.call_count == 1
 
     @patch("src.restore.deleter.create_boto_client")
-    def test_delete_handles_unexpected_exception_in_attempt(
-        self, mock_create_client: Mock
-    ) -> None:
+    def test_delete_handles_unexpected_exception_in_attempt(self, mock_create_client: Mock) -> None:
         """Test _attempt_deletion handles unexpected non-ClientError exception."""
         mock_client = Mock()
         # Raise unexpected exception during deletion attempt
@@ -418,11 +410,15 @@ class TestResourceDeleter:
         deleter = ResourceDeleter(max_retries=3)
 
         # Mock _attempt_deletion to raise exception twice, then succeed
-        with patch.object(deleter, '_attempt_deletion', side_effect=[
-            RuntimeError("Attempt failed"),
-            RuntimeError("Attempt failed again"),
-            (True, None),  # Success on third attempt
-        ]):
+        with patch.object(
+            deleter,
+            "_attempt_deletion",
+            side_effect=[
+                RuntimeError("Attempt failed"),
+                RuntimeError("Attempt failed again"),
+                (True, None),  # Success on third attempt
+            ],
+        ):
             success, error = deleter.delete_resource(
                 resource_type="AWS::EC2::Instance",
                 resource_id="i-retry",
@@ -439,7 +435,7 @@ class TestResourceDeleter:
         deleter = ResourceDeleter(max_retries=2)
 
         # Mock _attempt_deletion to always raise exception
-        with patch.object(deleter, '_attempt_deletion', side_effect=RuntimeError("Always fails")):
+        with patch.object(deleter, "_attempt_deletion", side_effect=RuntimeError("Always fails")):
             success, error = deleter.delete_resource(
                 resource_type="AWS::EC2::Instance",
                 resource_id="i-always-fail",

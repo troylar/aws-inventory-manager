@@ -276,9 +276,9 @@ class TestRestoreWorkflowIntegration:
         ]
 
         # Mock resource collection and deletion
-        with patch.object(
-            cleaner, "_collect_current_resources", return_value=current_resources
-        ), patch.object(cleaner, "_delete_resource", return_value=True) as mock_delete:
+        with patch.object(cleaner, "_collect_current_resources", return_value=current_resources), patch.object(
+            cleaner, "_delete_resource", return_value=True
+        ) as mock_delete:
             operation = cleaner.execute(
                 baseline_snapshot="baseline-test",
                 account_id="123456789012",

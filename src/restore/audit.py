@@ -136,9 +136,7 @@ class AuditStorage:
 
         return None
 
-    def query_operations(
-        self, since: Optional[datetime] = None, until: Optional[datetime] = None
-    ) -> list[dict]:
+    def query_operations(self, since: Optional[datetime] = None, until: Optional[datetime] = None) -> list[dict]:
         """Query operations within date range.
 
         Args:

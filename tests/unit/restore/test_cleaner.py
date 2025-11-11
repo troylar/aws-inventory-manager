@@ -18,9 +18,7 @@ from src.restore.cleaner import ResourceCleaner
 class TestResourceCleanerPreview:
     """Test suite for ResourceCleaner preview functionality (US1)."""
 
-    def _create_mock_delta_calculator(
-        self, mock_delta_calc_class: Mock, added_resources: list[dict]
-    ) -> None:
+    def _create_mock_delta_calculator(self, mock_delta_calc_class: Mock, added_resources: list[dict]) -> None:
         """Helper to create mock delta calculator with added resources.
 
         Args:
@@ -344,9 +342,7 @@ class TestResourceCleanerExecute:
             },
         ]
 
-    def test_execute_requires_confirmation(
-        self, mock_snapshot_storage: Mock
-    ) -> None:
+    def test_execute_requires_confirmation(self, mock_snapshot_storage: Mock) -> None:
         """Test execute() requires confirmation flag."""
         cleaner = ResourceCleaner(
             snapshot_storage=mock_snapshot_storage,
@@ -397,9 +393,9 @@ class TestResourceCleanerExecute:
         )
 
         # Mock AWS deletion
-        with patch.object(
-            cleaner, "_collect_current_resources", return_value=mock_current_resources
-        ), patch.object(cleaner, "_delete_resource", return_value=True) as mock_delete:
+        with patch.object(cleaner, "_collect_current_resources", return_value=mock_current_resources), patch.object(
+            cleaner, "_delete_resource", return_value=True
+        ) as mock_delete:
             operation = cleaner.execute(
                 baseline_snapshot="baseline-snapshot",
                 account_id="123456789012",
@@ -446,9 +442,9 @@ class TestResourceCleanerExecute:
         )
 
         # Mock AWS deletion
-        with patch.object(
-            cleaner, "_collect_current_resources", return_value=mock_current_resources
-        ), patch.object(cleaner, "_delete_resource", return_value=True) as mock_delete:
+        with patch.object(cleaner, "_collect_current_resources", return_value=mock_current_resources), patch.object(
+            cleaner, "_delete_resource", return_value=True
+        ) as mock_delete:
             operation = cleaner.execute(
                 baseline_snapshot="baseline-snapshot",
                 account_id="123456789012",
@@ -493,9 +489,7 @@ class TestResourceCleanerExecute:
         )
 
         # Mock AWS deletion failure
-        with patch.object(
-            cleaner, "_collect_current_resources", return_value=mock_current_resources
-        ), patch.object(
+        with patch.object(cleaner, "_collect_current_resources", return_value=mock_current_resources), patch.object(
             cleaner, "_delete_resource", return_value=False
         ) as mock_delete:  # Deletion fails
             operation = cleaner.execute(
@@ -546,9 +540,9 @@ class TestResourceCleanerExecute:
         )
 
         # Mock AWS deletion
-        with patch.object(
-            cleaner, "_collect_current_resources", return_value=mock_current_resources
-        ), patch.object(cleaner, "_delete_resource", return_value=True):
+        with patch.object(cleaner, "_collect_current_resources", return_value=mock_current_resources), patch.object(
+            cleaner, "_delete_resource", return_value=True
+        ):
             operation = cleaner.execute(
                 baseline_snapshot="baseline-snapshot",
                 account_id="123456789012",
@@ -693,10 +687,20 @@ class TestResourceCleanerEdgeCases:
 
         # Create mock resources that will be added
         resources_to_delete = [
-            {"resource_id": "i-success", "resource_type": "AWS::EC2::Instance",
-             "region": "us-east-1", "arn": "arn:aws:ec2:us-east-1:123456789012:instance/i-success", "tags": {}},
-            {"resource_id": "i-fail", "resource_type": "AWS::EC2::Instance",
-             "region": "us-east-1", "arn": "arn:aws:ec2:us-east-1:123456789012:instance/i-fail", "tags": {}},
+            {
+                "resource_id": "i-success",
+                "resource_type": "AWS::EC2::Instance",
+                "region": "us-east-1",
+                "arn": "arn:aws:ec2:us-east-1:123456789012:instance/i-success",
+                "tags": {},
+            },
+            {
+                "resource_id": "i-fail",
+                "resource_type": "AWS::EC2::Instance",
+                "region": "us-east-1",
+                "arn": "arn:aws:ec2:us-east-1:123456789012:instance/i-fail",
+                "tags": {},
+            },
         ]
 
         # Setup delta calculator
@@ -726,7 +730,7 @@ class TestResourceCleanerEdgeCases:
         )
 
         # Mock _delete_resource to return success for first, fail for second
-        with patch.object(cleaner, '_delete_resource', side_effect=[True, False]):
+        with patch.object(cleaner, "_delete_resource", side_effect=[True, False]):
             operation = cleaner.execute(
                 baseline_snapshot="test-snapshot",
                 account_id="123456789012",
@@ -756,8 +760,13 @@ class TestResourceCleanerEdgeCases:
 
         # Create mock resource
         resources = [
-            {"resource_id": "i-fail", "resource_type": "AWS::EC2::Instance",
-             "region": "us-east-1", "arn": "arn:aws:ec2:us-east-1:123456789012:instance/i-fail", "tags": {}},
+            {
+                "resource_id": "i-fail",
+                "resource_type": "AWS::EC2::Instance",
+                "region": "us-east-1",
+                "arn": "arn:aws:ec2:us-east-1:123456789012:instance/i-fail",
+                "tags": {},
+            },
         ]
 
         mock_resource_objects = []

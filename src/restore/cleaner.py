@@ -89,8 +89,7 @@ class ResourceCleaner:
         snapshot_account = snapshot.account_id
         if snapshot_account != account_id:
             raise ValueError(
-                f"Account ID mismatch: snapshot has {snapshot_account}, "
-                f"current credentials have {account_id}"
+                f"Account ID mismatch: snapshot has {snapshot_account}, " f"current credentials have {account_id}"
             )
 
         # Collect current resources
@@ -191,8 +190,7 @@ class ResourceCleaner:
         snapshot_account = snapshot.account_id
         if snapshot_account != account_id:
             raise ValueError(
-                f"Account ID mismatch: snapshot has {snapshot_account}, "
-                f"current credentials have {account_id}"
+                f"Account ID mismatch: snapshot has {snapshot_account}, " f"current credentials have {account_id}"
             )
 
         # Collect current resources
@@ -351,9 +349,7 @@ class ResourceCleaner:
 
         return success
 
-    def _collect_current_resources(
-        self, account_id: str, regions: Optional[list[str]] = None
-    ) -> list[dict]:
+    def _collect_current_resources(self, account_id: str, regions: Optional[list[str]] = None) -> list[dict]:
         """Collect current resources from AWS account.
 
         This is a placeholder that would normally call AWS APIs to collect

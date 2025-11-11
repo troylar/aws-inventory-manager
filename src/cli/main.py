@@ -1893,7 +1893,9 @@ def restore_preview(
     baseline_snapshot: str = typer.Argument(..., help="Baseline snapshot name to compare against"),
     account_id: str = typer.Option(None, "--account-id", help="AWS account ID (auto-detected if not provided)"),
     profile: Optional[str] = typer.Option(None, "--profile", help="AWS profile name"),
-    resource_types: Optional[List[str]] = typer.Option(None, "--type", help="Filter by resource types (e.g., AWS::EC2::Instance)"),
+    resource_types: Optional[List[str]] = typer.Option(
+        None, "--type", help="Filter by resource types (e.g., AWS::EC2::Instance)"
+    ),
     regions: Optional[List[str]] = typer.Option(None, "--region", help="Filter by AWS regions"),
     output_format: str = typer.Option("table", "--format", help="Output format: table, json, yaml"),
 ):
@@ -1981,7 +1983,9 @@ def restore_preview(
         # Warning if resources would be deleted
         if operation.total_resources > operation.skipped_count:
             deletable_count = operation.total_resources - operation.skipped_count
-            console.print(f"\n[yellow]⚠️  {deletable_count} resource(s) would be DELETED if you run 'restore execute'[/yellow]")
+            console.print(
+                f"\n[yellow]⚠️  {deletable_count} resource(s) would be DELETED if you run 'restore execute'[/yellow]"
+            )
             console.print("[dim]Use 'awsinv restore execute' with --confirm to actually delete resources[/dim]\n")
         else:
             console.print("\n[green]✓ No resources would be deleted - environment matches baseline[/green]\n")
@@ -2115,7 +2119,11 @@ def restore_execute(
         console.print(f"\n[bold]Deletion Complete[/bold]\n")
 
         # Results summary
-        status_color = "green" if operation.status.value == "completed" else "yellow" if operation.status.value == "partial" else "red"
+        status_color = (
+            "green"
+            if operation.status.value == "completed"
+            else "yellow" if operation.status.value == "partial" else "red"
+        )
 
         summary_text = f"""
 [bold]Operation ID:[/bold] {operation.operation_id}

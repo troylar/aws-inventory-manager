@@ -36,58 +36,42 @@ class ResourceDeleter:
         "AWS::EC2::RouteTable": ("ec2", "delete_route_table", "RouteTableId"),
         "AWS::EC2::NetworkInterface": ("ec2", "delete_network_interface", "NetworkInterfaceId"),
         "AWS::EC2::KeyPair": ("ec2", "delete_key_pair", "KeyName"),
-
         # S3
         "AWS::S3::Bucket": ("s3", "delete_bucket", "Bucket"),
-
         # Lambda
         "AWS::Lambda::Function": ("lambda", "delete_function", "FunctionName"),
-
         # DynamoDB
         "AWS::DynamoDB::Table": ("dynamodb", "delete_table", "TableName"),
-
         # RDS
         "AWS::RDS::DBInstance": ("rds", "delete_db_instance", "DBInstanceIdentifier"),
         "AWS::RDS::DBCluster": ("rds", "delete_db_cluster", "DBClusterIdentifier"),
-
         # IAM
         "AWS::IAM::Role": ("iam", "delete_role", "RoleName"),
         "AWS::IAM::User": ("iam", "delete_user", "UserName"),
         "AWS::IAM::Policy": ("iam", "delete_policy", "PolicyArn"),
-
         # ECS
         "AWS::ECS::Service": ("ecs", "delete_service", "service"),
         "AWS::ECS::Cluster": ("ecs", "delete_cluster", "cluster"),
         "AWS::ECS::TaskDefinition": ("ecs", "deregister_task_definition", "taskDefinition"),
-
         # EKS
         "AWS::EKS::Cluster": ("eks", "delete_cluster", "name"),
-
         # SNS
         "AWS::SNS::Topic": ("sns", "delete_topic", "TopicArn"),
-
         # SQS
         "AWS::SQS::Queue": ("sqs", "delete_queue", "QueueUrl"),
-
         # CloudWatch
         "AWS::CloudWatch::Alarm": ("cloudwatch", "delete_alarms", "AlarmNames"),
-
         # API Gateway
         "AWS::ApiGateway::RestApi": ("apigateway", "delete_rest_api", "restApiId"),
-
         # KMS
         "AWS::KMS::Key": ("kms", "schedule_key_deletion", "KeyId"),
-
         # Secrets Manager
         "AWS::SecretsManager::Secret": ("secretsmanager", "delete_secret", "SecretId"),
-
         # ELB
         "AWS::ElasticLoadBalancing::LoadBalancer": ("elb", "delete_load_balancer", "LoadBalancerName"),
         "AWS::ElasticLoadBalancingV2::LoadBalancer": ("elbv2", "delete_load_balancer", "LoadBalancerArn"),
-
         # EFS
         "AWS::EFS::FileSystem": ("efs", "delete_file_system", "FileSystemId"),
-
         # ElastiCache
         "AWS::ElastiCache::CacheCluster": ("elasticache", "delete_cache_cluster", "CacheClusterId"),
     }
@@ -147,7 +131,7 @@ class ResourceDeleter:
                 elif "DependencyViolation" in (error or ""):
                     # Dependency violations should be retried
                     if attempt < self.max_retries - 1:
-                        wait_time = 2 ** attempt  # Exponential backoff
+                        wait_time = 2**attempt  # Exponential backoff
                         logger.debug(
                             f"Dependency violation for {resource_id}, "
                             f"retrying in {wait_time}s (attempt {attempt + 1}/{self.max_retries})"
@@ -162,7 +146,7 @@ class ResourceDeleter:
                 error_msg = f"Unexpected error deleting {resource_type} {resource_id}: {str(e)}"
                 logger.error(error_msg)
                 if attempt < self.max_retries - 1:
-                    time.sleep(2 ** attempt)
+                    time.sleep(2**attempt)
                     continue
                 return (False, error_msg)
 
