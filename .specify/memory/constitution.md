@@ -50,10 +50,16 @@ TDD is mandatory for all features. Tests MUST be written, reviewed, and verified
 - Write unit tests for all business logic (pure functions, data models)
 - Write integration tests for CLI commands and AWS interactions
 - Tests must fail initially (Red), then pass after implementation (Green)
-- Minimum 80% code coverage across all modules
+- **100% code coverage required for all new features** (existing code: minimum 80%)
 - Use pytest with pytest-cov, pytest-mock for all testing
 
-**Rationale**: TDD prevents regressions, ensures testable design, documents expected behavior, and provides confidence in refactoring. The Red-Green-Refactor cycle is strictly enforced.
+**Coverage Requirements**:
+- **New features**: 100% coverage of all new code paths, branches, and edge cases
+- **Bug fixes**: 100% coverage of the fixed code and regression test
+- **Existing code**: Minimum 80% coverage (must not decrease)
+- Coverage measured per feature branch before merge
+
+**Rationale**: TDD prevents regressions, ensures testable design, documents expected behavior, and provides confidence in refactoring. The Red-Green-Refactor cycle is strictly enforced. 100% coverage for new features ensures thorough validation and prevents untested code from entering the codebase.
 
 ### IV. Type Safety & Code Quality
 
@@ -163,7 +169,7 @@ invoke test         # Run all tests with coverage
 
 All pull requests MUST:
 1. Pass all quality checks (`invoke quality`)
-2. Pass all tests with ≥80% coverage (`invoke test`)
+2. Pass all tests with 100% coverage for new code, ≥80% overall (`invoke test`)
 3. Include tests for new functionality (TDD: tests written first)
 4. Update documentation (README, command help text, examples)
 5. Follow commit message format: `type(scope): description (#issue)`
@@ -172,7 +178,7 @@ All pull requests MUST:
 
 Before marking a feature complete:
 - [ ] All user stories independently testable
-- [ ] Unit tests written and passing (≥80% coverage)
+- [ ] Unit tests written and passing (100% coverage for new code)
 - [ ] Integration tests written and passing
 - [ ] CLI help text updated
 - [ ] README examples added
@@ -209,6 +215,7 @@ All pull requests and code reviews MUST verify compliance with constitutional pr
 
 ### Version Information
 
-**Version**: 1.0.0
+**Version**: 1.1.0
 **Ratified**: 2025-10-31
-**Last Amended**: 2025-10-31
+**Last Amended**: 2025-01-09
+**Amendment Summary**: Added 100% test coverage requirement for all new features (was 80% minimum)

@@ -1,8 +1,13 @@
 """Delta report models for tracking resource changes."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+if TYPE_CHECKING:
+    from ..delta.models import DriftReport
 
 
 @dataclass
@@ -43,10 +48,11 @@ class DeltaReport:
     modified_resources: List[ResourceChange] = field(default_factory=list)
     baseline_resource_count: int = 0  # Reference snapshot count (keeping field name for compatibility)
     current_resource_count: int = 0
+    drift_report: Optional[DriftReport] = None  # Configuration drift details (when --show-diff is used)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
-        return {
+        result = {
             "generated_at": self.generated_at.isoformat(),
             "baseline_snapshot_name": self.baseline_snapshot_name,
             "current_snapshot_name": self.current_snapshot_name,
@@ -63,6 +69,12 @@ class DeltaReport:
                 "total_changes": self.total_changes,
             },
         }
+
+        # Include drift details if available
+        if self.drift_report is not None:
+            result["drift_details"] = self.drift_report.to_dict()
+
+        return result
 
     @property
     def total_changes(self) -> int:
@@ -86,7 +98,6 @@ class DeltaReport:
         Returns:
             Dictionary mapping service type to changes dict with 'added', 'deleted', 'modified' lists
         """
-        from typing import Any, Dict, List
 
         grouped: Dict[str, Dict[str, List[Any]]] = {}
 

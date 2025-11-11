@@ -10,6 +10,10 @@ class Snapshot:
     """Represents a point-in-time inventory of AWS resources.
 
     This serves as the baseline reference for delta tracking and cost analysis.
+
+    Schema Versions:
+    - v1.0: Basic snapshot with config_hash only
+    - v1.1: Added raw_config for drift analysis support
     """
 
     name: str
@@ -24,6 +28,7 @@ class Snapshot:
     filters_applied: Optional[Dict[str, Any]] = None
     total_resources_before_filter: Optional[int] = None
     inventory_name: str = "default"  # Name of inventory this snapshot belongs to
+    schema_version: str = "1.1"  # Schema version for forward/backward compatibility
 
     def __post_init__(self) -> None:
         """Calculate derived fields after initialization."""
@@ -44,6 +49,7 @@ class Snapshot:
     def to_dict(self) -> Dict[str, Any]:
         """Convert snapshot to dictionary for serialization."""
         return {
+            "schema_version": self.schema_version,
             "name": self.name,
             "created_at": self.created_at.isoformat(),
             "account_id": self.account_id,
@@ -61,6 +67,8 @@ class Snapshot:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Snapshot":
         """Create snapshot from dictionary.
+
+        Supports both v1.0 and v1.1+ snapshot formats for backward compatibility.
 
         Note: This requires Resource class to be imported at call time
         to avoid circular imports.
@@ -80,6 +88,7 @@ class Snapshot:
             filters_applied=data.get("filters_applied"),
             total_resources_before_filter=data.get("total_resources_before_filter"),
             inventory_name=data.get("inventory_name", "default"),  # Default for backward compatibility
+            schema_version=data.get("schema_version", "1.0"),  # Default to 1.0 for old snapshots
         )
 
     def validate(self) -> bool:

@@ -23,7 +23,9 @@ from .resource_collectors.codepipeline import CodePipelineCollector
 from .resource_collectors.dynamodb import DynamoDBCollector
 from .resource_collectors.ec2 import EC2Collector
 from .resource_collectors.ecs import ECSCollector
+from .resource_collectors.efs_collector import EFSCollector
 from .resource_collectors.eks import EKSCollector
+from .resource_collectors.elasticache_collector import ElastiCacheCollector
 from .resource_collectors.elb import ELBCollector
 from .resource_collectors.eventbridge import EventBridgeCollector
 from .resource_collectors.iam import IAMCollector
@@ -55,6 +57,8 @@ COLLECTOR_REGISTRY: List[Type[BaseResourceCollector]] = [
     SQSCollector,
     DynamoDBCollector,
     ELBCollector,
+    EFSCollector,
+    ElastiCacheCollector,
     CloudFormationCollector,
     APIGatewayCollector,
     EventBridgeCollector,

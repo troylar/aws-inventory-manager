@@ -60,6 +60,15 @@ class DeltaReporter:
             if any(changes.values()):
                 self._display_service_changes(service_type, changes, show_details)
 
+        # Display drift details if available
+        if report.drift_report is not None and report.drift_report.total_changes > 0:
+            from .formatters import DriftFormatter
+
+            self.console.print()
+            self.console.print("[bold cyan]═" * 50 + "[/bold cyan]")
+            formatter = DriftFormatter(self.console)
+            formatter.display(report.drift_report)
+
     def _display_summary(self, report: DeltaReport) -> None:
         """Display summary statistics."""
         table = Table(title="Summary", show_header=True, header_style="bold magenta")

@@ -15,12 +15,15 @@ class Resource:
     name: str
     region: str
     config_hash: str
-    raw_config: Dict[str, Any]
+    raw_config: Optional[Dict[str, Any]] = None  # Optional for backward compatibility with v1.0 snapshots
     tags: Dict[str, str] = field(default_factory=dict)
     created_at: Optional[datetime] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert resource to dictionary for serialization."""
+        """Convert resource to dictionary for serialization.
+
+        Note: raw_config is included in v1.1+ snapshots for drift analysis support.
+        """
         return {
             "arn": self.arn,
             "type": self.resource_type,
@@ -29,12 +32,15 @@ class Resource:
             "tags": self.tags,
             "config_hash": self.config_hash,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "raw_config": self.raw_config,
+            "raw_config": self.raw_config if self.raw_config is not None else {},
         }
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Resource":
-        """Create resource from dictionary."""
+        """Create resource from dictionary.
+
+        Supports both v1.0 (without raw_config) and v1.1+ (with raw_config) snapshots.
+        """
         created_at = None
         if data.get("created_at"):
             created_at = datetime.fromisoformat(data["created_at"])
@@ -45,7 +51,7 @@ class Resource:
             name=data["name"],
             region=data["region"],
             config_hash=data["config_hash"],
-            raw_config=data["raw_config"],
+            raw_config=data.get("raw_config"),  # Optional for backward compatibility
             tags=data.get("tags", {}),
             created_at=created_at,
         )

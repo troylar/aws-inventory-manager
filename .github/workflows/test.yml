@@ -1,8 +1,8 @@
-name: Tests
+name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, 001-quick-wins ]
   pull_request:
     branches: [ main ]
 
@@ -32,9 +32,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Run quality checks
+      - name: Check code formatting (black)
         run: |
-          invoke quality
+          invoke format --check
+
+      - name: Lint code (ruff)
+        run: |
+          invoke lint
+
+      - name: Type check (mypy)
+        run: |
+          invoke typecheck
 
       - name: Run tests with coverage
         run: |

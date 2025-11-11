@@ -572,9 +572,7 @@ def inventory_migrate(
         raise
     except Exception as e:
         console.print(f"✗ Error during migration: {e}", style="bold red")
-        import traceback
-
-        traceback.print_exc()
+        logger.exception("Error in inventory migrate command")
         raise typer.Exit(code=2)
 
 
@@ -667,9 +665,7 @@ def inventory_delete(
         raise
     except Exception as e:
         console.print(f"✗ Error deleting inventory: {e}", style="bold red")
-        import traceback
-
-        traceback.print_exc()
+        logger.exception("Error in inventory delete command")
         raise typer.Exit(code=2)
 
 
@@ -971,14 +967,12 @@ def snapshot_create(
         raise typer.Exit(code=3)
     except Exception as e:
         console.print(f"✗ Error creating snapshot: {e}", style="bold red")
-        import traceback
-
-        traceback.print_exc()
+        logger.exception("Error in snapshot create command")
         raise typer.Exit(code=2)
 
 
 @snapshot_app.command("list")
-def snapshot_list():
+def snapshot_list(profile: Optional[str] = typer.Option(None, "--profile", "-p", help="AWS profile name")):
     """List all available snapshots."""
     try:
         storage = SnapshotStorage(config.storage_path)
@@ -1013,7 +1007,10 @@ def snapshot_list():
 
 
 @snapshot_app.command("show")
-def snapshot_show(name: str = typer.Argument(..., help="Snapshot name to display")):
+def snapshot_show(
+    name: str = typer.Argument(..., help="Snapshot name to display"),
+    profile: Optional[str] = typer.Option(None, "--profile", "-p", help="AWS profile name"),
+):
     """Display detailed information about a snapshot."""
     try:
         storage = SnapshotStorage(config.storage_path)
@@ -1062,7 +1059,10 @@ def snapshot_show(name: str = typer.Argument(..., help="Snapshot name to display
 
 
 @snapshot_app.command("set-active")
-def snapshot_set_active(name: str = typer.Argument(..., help="Snapshot name to set as active")):
+def snapshot_set_active(
+    name: str = typer.Argument(..., help="Snapshot name to set as active"),
+    profile: Optional[str] = typer.Option(None, "--profile", "-p", help="AWS profile name"),
+):
     """Set a snapshot as the active snapshot.
 
     The active snapshot is used by default for delta and cost analysis.
@@ -1085,6 +1085,7 @@ def snapshot_set_active(name: str = typer.Argument(..., help="Snapshot name to s
 def snapshot_delete(
     name: str = typer.Argument(..., help="Snapshot name to delete"),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt"),
+    profile: Optional[str] = typer.Option(None, "--profile", "-p", help="AWS profile name"),
 ):
     """Delete a snapshot.
 
@@ -1409,13 +1410,14 @@ def delta(
     resource_type: Optional[str] = typer.Option(None, "--resource-type", help="Filter by resource type"),
     region: Optional[str] = typer.Option(None, "--region", help="Filter by region"),
     show_details: bool = typer.Option(False, "--show-details", help="Show detailed resource information"),
+    show_diff: bool = typer.Option(False, "--show-diff", help="Show field-level configuration differences"),
     export: Optional[str] = typer.Option(None, "--export", help="Export to file (JSON or CSV based on extension)"),
     profile: Optional[str] = typer.Option(None, "--profile", "-p", help="AWS profile name"),
 ):
     """View resource changes since snapshot.
 
     Compares current AWS state to the snapshot and shows added, deleted,
-    and modified resources.
+    and modified resources. Use --show-diff to see field-level configuration changes.
     """
     try:
         # T021: Get inventory and use its active snapshot
@@ -1495,6 +1497,7 @@ def delta(
             regions=None,  # Use reference snapshot regions
             resource_type_filter=resource_type_filter,
             region_filter=region_filter,
+            include_drift_details=show_diff,
         )
 
         # Display delta
@@ -1525,9 +1528,7 @@ def delta(
         raise typer.Exit(code=1)
     except Exception as e:
         console.print(f"✗ Error calculating delta: {e}", style="bold red")
-        import traceback
-
-        traceback.print_exc()
+        logger.exception("Error in delta command")
         raise typer.Exit(code=2)
 
 
@@ -1708,10 +1709,179 @@ def cost(
         raise typer.Exit(code=1)
     except Exception as e:
         console.print(f"✗ Error analyzing costs: {e}", style="bold red")
-        import traceback
-
-        traceback.print_exc()
+        logger.exception("Error in cost command")
         raise typer.Exit(code=2)
+
+
+# ============================================================================
+# Security Commands
+# ============================================================================
+
+security_app = typer.Typer(help="Security scanning and compliance checking commands")
+
+
+@security_app.command(name="scan")
+def security_scan(
+    snapshot: Optional[str] = typer.Option(None, "--snapshot", "-s", help="Snapshot name to scan"),
+    inventory: Optional[str] = typer.Option(None, "--inventory", "-i", help="Inventory name (uses active snapshot)"),
+    storage_dir: Optional[str] = typer.Option(None, "--storage-dir", help="Snapshot storage directory"),
+    severity: Optional[str] = typer.Option(None, "--severity", help="Filter by severity: critical, high, medium, low"),
+    export: Optional[str] = typer.Option(None, "--export", help="Export findings to file"),
+    format: str = typer.Option("json", "--format", "-f", help="Export format: json or csv"),
+    cis_only: bool = typer.Option(False, "--cis-only", help="Show only findings with CIS Benchmark mappings"),
+    profile: Optional[str] = typer.Option(None, "--profile", "-p", help="AWS profile name"),
+):
+    """Scan a snapshot for security misconfigurations and compliance issues.
+
+    Performs comprehensive security checks including:
+    - Public S3 buckets
+    - Open security groups (SSH, RDP, databases)
+    - Publicly accessible RDS instances
+    - EC2 instances with IMDSv1 enabled
+    - IAM credentials older than 90 days
+    - Secrets Manager secrets not rotated in 90+ days
+
+    Examples:
+        # Scan a specific snapshot
+        awsinv security scan --snapshot my-snapshot
+
+        # Scan with severity filter
+        awsinv security scan --snapshot my-snapshot --severity critical
+
+        # Export findings to JSON
+        awsinv security scan --snapshot my-snapshot --export findings.json
+
+        # Export to CSV
+        awsinv security scan --snapshot my-snapshot --export findings.csv --format csv
+
+        # Show only CIS-mapped findings
+        awsinv security scan --snapshot my-snapshot --cis-only
+    """
+    from ..security.cis_mapper import CISMapper
+    from ..security.reporter import SecurityReporter
+    from ..security.scanner import SecurityScanner
+    from ..snapshot.inventory_storage import InventoryStorage
+
+    try:
+        # Determine which snapshot to scan
+        if not snapshot and not inventory:
+            console.print("✗ Error: Must specify either --snapshot or --inventory", style="bold red")
+            raise typer.Exit(code=1)
+
+        # Use profile parameter if provided, otherwise use config
+        aws_profile = profile if profile else config.aws_profile
+
+        # Load snapshot
+        storage = SnapshotStorage(storage_dir or config.storage_path)
+
+        if inventory:
+            # Load active snapshot from inventory
+            # Need AWS credentials to get account ID
+            identity = validate_credentials(aws_profile)
+            inv_storage = InventoryStorage(storage_dir or config.storage_path)
+            inv = inv_storage.get_by_name(inventory, identity["account_id"])
+            if not inv.active_snapshot:
+                console.print(
+                    f"✗ Error: Inventory '{inventory}' has no active snapshot. "
+                    f"Use 'awsinv snapshot set-active' to set one.",
+                    style="bold red",
+                )
+                raise typer.Exit(code=1)
+            # Strip .yaml or .yaml.gz extension if present
+            snapshot_name = inv.active_snapshot.replace(".yaml.gz", "").replace(".yaml", "")
+            snapshot_obj = storage.load_snapshot(snapshot_name)
+        else:
+            snapshot_obj = storage.load_snapshot(snapshot)  # type: ignore
+
+        console.print(f"\n🔍 Scanning snapshot: [bold cyan]{snapshot_obj.name}[/bold cyan]\n")
+
+        # Parse severity filter
+        severity_filter = None
+        if severity:
+            from ..models.security_finding import Severity
+
+            severity_map = {
+                "critical": Severity.CRITICAL,
+                "high": Severity.HIGH,
+                "medium": Severity.MEDIUM,
+                "low": Severity.LOW,
+            }
+            severity_filter = severity_map.get(severity.lower())
+            if not severity_filter:
+                console.print(f"✗ Invalid severity: {severity}. Must be: critical, high, medium, low", style="bold red")
+                raise typer.Exit(code=1)
+
+        # Run security scan
+        scanner = SecurityScanner()
+        result = scanner.scan(snapshot_obj, severity_filter=severity_filter)
+
+        # Filter CIS-only if requested
+        findings_to_report = result.findings
+        if cis_only:
+            findings_to_report = [f for f in result.findings if f.cis_control is not None]
+
+        # Display results
+        reporter = SecurityReporter()
+
+        if len(findings_to_report) == 0:
+            console.print("✓ [bold green]No security issues found![/bold green]\n")
+            if severity_filter:
+                console.print(f"  (Filtered by severity: {severity})")
+            if cis_only:
+                console.print("  (Showing only CIS-mapped findings)")
+        else:
+            # Generate summary
+            summary = reporter.generate_summary(findings_to_report)
+
+            console.print(f"[bold red]✗ Found {summary['total_findings']} security issue(s)[/bold red]\n")
+            console.print(
+                f"  Critical: {summary['critical_count']}  "
+                f"High: {summary['high_count']}  "
+                f"Medium: {summary['medium_count']}  "
+                f"Low: {summary['low_count']}\n"
+            )
+
+            # Display findings
+            output = reporter.format_terminal(findings_to_report)
+            console.print(output)
+
+            # Show CIS summary
+            cis_mapper = CISMapper()
+            cis_summary = cis_mapper.get_summary(findings_to_report)
+
+            if cis_summary["total_controls_checked"] > 0:
+                console.print("\n[bold]CIS Benchmark Summary:[/bold]")
+                console.print(
+                    f"  Controls checked: {cis_summary['total_controls_checked']}  "
+                    f"Failed: {cis_summary['controls_failed']}  "
+                    f"Passed: {cis_summary['controls_passed']}"
+                )
+
+        # Export if requested
+        if export:
+            if format.lower() == "json":
+                reporter.export_json(findings_to_report, export)
+                console.print(f"\n✓ Exported findings to: [cyan]{export}[/cyan] (JSON)")
+            elif format.lower() == "csv":
+                reporter.export_csv(findings_to_report, export)
+                console.print(f"\n✓ Exported findings to: [cyan]{export}[/cyan] (CSV)")
+            else:
+                console.print(f"✗ Invalid format: {format}. Must be 'json' or 'csv'", style="bold red")
+                raise typer.Exit(code=1)
+
+    except typer.Exit:
+        # Re-raise Typer exit codes (for early returns like missing params)
+        raise
+    except FileNotFoundError as e:
+        console.print(f"✗ Snapshot not found: {e}", style="bold red")
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"✗ Error during security scan: {e}", style="bold red")
+        logger.exception("Error in security scan command")
+        raise typer.Exit(code=2)
+
+
+app.add_typer(security_app, name="security")
 
 
 def cli_main():
