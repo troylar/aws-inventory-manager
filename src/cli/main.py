@@ -1787,7 +1787,9 @@ def security_scan(
                     style="bold red",
                 )
                 raise typer.Exit(code=1)
-            snapshot_obj = storage.load_snapshot(inv.active_snapshot)
+            # Strip .yaml or .yaml.gz extension if present
+            snapshot_name = inv.active_snapshot.replace(".yaml.gz", "").replace(".yaml", "")
+            snapshot_obj = storage.load_snapshot(snapshot_name)
         else:
             snapshot_obj = storage.load_snapshot(snapshot)  # type: ignore
 
