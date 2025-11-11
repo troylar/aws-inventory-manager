@@ -1884,6 +1884,279 @@ def security_scan(
 app.add_typer(security_app, name="security")
 
 
+# Restore commands
+restore_app = typer.Typer(help="Resource cleanup and restoration commands")
+
+
+@restore_app.command("preview")
+def restore_preview(
+    baseline_snapshot: str = typer.Argument(..., help="Baseline snapshot name to compare against"),
+    account_id: str = typer.Option(None, "--account-id", help="AWS account ID (auto-detected if not provided)"),
+    profile: Optional[str] = typer.Option(None, "--profile", help="AWS profile name"),
+    resource_types: Optional[List[str]] = typer.Option(
+        None, "--type", help="Filter by resource types (e.g., AWS::EC2::Instance)"
+    ),
+    regions: Optional[List[str]] = typer.Option(None, "--region", help="Filter by AWS regions"),
+    output_format: str = typer.Option("table", "--format", help="Output format: table, json, yaml"),
+):
+    """Preview resources that would be deleted to restore to baseline.
+
+    Shows what resources have been created since the baseline snapshot without
+    performing any deletions. This is a safe dry-run operation.
+
+    Examples:
+        # Preview all new resources since baseline
+        awsinv restore preview baseline-snapshot
+
+        # Preview only EC2 instances in us-east-1
+        awsinv restore preview baseline-snapshot --type AWS::EC2::Instance --region us-east-1
+
+        # Preview with specific AWS profile
+        awsinv restore preview baseline-snapshot --profile production
+    """
+    from ..aws.credentials import get_account_id
+    from ..restore.audit import AuditStorage
+    from ..restore.cleaner import ResourceCleaner
+    from ..restore.safety import SafetyChecker
+
+    try:
+        console.print("\n[bold cyan]🔍 Previewing Resource Cleanup[/bold cyan]\n")
+
+        # Auto-detect account ID if not provided
+        if not account_id:
+            try:
+                account_id = get_account_id(profile_name=profile)
+                console.print(f"[dim]Detected account ID: {account_id}[/dim]")
+            except Exception as e:
+                console.print(f"[red]Error detecting account ID: {e}[/red]")
+                console.print("[yellow]Please provide --account-id explicitly[/yellow]")
+                raise typer.Exit(code=1)
+
+        # Initialize components
+        snapshot_storage = SnapshotStorage()
+        safety_checker = SafetyChecker(rules=[])  # Load rules from config
+        audit_storage = AuditStorage()
+
+        cleaner = ResourceCleaner(
+            snapshot_storage=snapshot_storage,
+            safety_checker=safety_checker,
+            audit_storage=audit_storage,
+        )
+
+        # Run preview
+        with console.status("[bold green]Analyzing resources..."):
+            operation = cleaner.preview(
+                baseline_snapshot=baseline_snapshot,
+                account_id=account_id,
+                aws_profile=profile,
+                resource_types=resource_types,
+                regions=regions,
+            )
+
+        # Display results
+        console.print("\n[bold green]✓ Preview Complete[/bold green]\n")
+
+        # Summary panel
+        summary_text = f"""
+[bold]Operation ID:[/bold] {operation.operation_id}
+[bold]Baseline Snapshot:[/bold] {operation.baseline_snapshot}
+[bold]Account ID:[/bold] {operation.account_id}
+[bold]Mode:[/bold] DRY-RUN (preview only)
+[bold]Status:[/bold] {operation.status.value.upper()}
+
+[bold cyan]Resources Identified:[/bold cyan]
+• Total: {operation.total_resources}
+• Would be deleted: {operation.total_resources - operation.skipped_count}
+• Protected (skipped): {operation.skipped_count}
+        """
+
+        if operation.filters:
+            filter_text = "\n[bold]Filters Applied:[/bold]"
+            if operation.filters.get("resource_types"):
+                filter_text += f"\n• Types: {', '.join(operation.filters['resource_types'])}"
+            if operation.filters.get("regions"):
+                filter_text += f"\n• Regions: {', '.join(operation.filters['regions'])}"
+            summary_text += filter_text
+
+        console.print(Panel(summary_text.strip(), title="[bold]Preview Summary[/bold]", border_style="cyan"))
+
+        # Warning if resources would be deleted
+        if operation.total_resources > operation.skipped_count:
+            deletable_count = operation.total_resources - operation.skipped_count
+            console.print(
+                f"\n[yellow]⚠️  {deletable_count} resource(s) would be DELETED if you run 'restore execute'[/yellow]"
+            )
+            console.print("[dim]Use 'awsinv restore execute' with --confirm to actually delete resources[/dim]\n")
+        else:
+            console.print("\n[green]✓ No resources would be deleted - environment matches baseline[/green]\n")
+
+    except ValueError as e:
+        console.print(f"\n[red]Error: {e}[/red]\n")
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"\n[red]Unexpected error: {e}[/red]\n")
+        logger.exception("Error in restore preview command")
+        raise typer.Exit(code=2)
+
+
+@restore_app.command("execute")
+def restore_execute(
+    baseline_snapshot: str = typer.Argument(..., help="Baseline snapshot name to restore to"),
+    account_id: str = typer.Option(None, "--account-id", help="AWS account ID (auto-detected if not provided)"),
+    profile: Optional[str] = typer.Option(None, "--profile", help="AWS profile name"),
+    resource_types: Optional[List[str]] = typer.Option(None, "--type", help="Filter by resource types"),
+    regions: Optional[List[str]] = typer.Option(None, "--region", help="Filter by AWS regions"),
+    confirm: bool = typer.Option(False, "--confirm", help="Confirm deletion (REQUIRED for execution)"),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip interactive confirmation prompt"),
+):
+    """Execute resource deletion to restore environment to baseline.
+
+    DESTRUCTIVE OPERATION: This will permanently delete AWS resources!
+
+    Deletes resources that were created after the baseline snapshot, restoring
+    your AWS environment to the baseline state. Protected resources are skipped.
+
+    Examples:
+        # Execute restoration (will prompt for confirmation)
+        awsinv restore execute baseline-snapshot --confirm
+
+        # Execute with filters and skip prompt
+        awsinv restore execute baseline-snapshot --confirm --yes --type AWS::EC2::Instance
+
+        # Execute in specific region with profile
+        awsinv restore execute baseline-snapshot --confirm --region us-east-1 --profile prod
+    """
+    from ..aws.credentials import get_account_id
+    from ..restore.audit import AuditStorage
+    from ..restore.cleaner import ResourceCleaner
+    from ..restore.safety import SafetyChecker
+
+    try:
+        # Require --confirm flag
+        if not confirm:
+            console.print("\n[red]ERROR: --confirm flag is required for deletion operations[/red]")
+            console.print("[yellow]This is a safety measure to prevent accidental deletions[/yellow]")
+            console.print("\n[dim]Run with: awsinv restore execute <snapshot> --confirm[/dim]\n")
+            raise typer.Exit(code=1)
+
+        console.print("\n[bold red]⚠️  DESTRUCTIVE OPERATION[/bold red]\n")
+
+        # Auto-detect account ID if not provided
+        if not account_id:
+            try:
+                account_id = get_account_id(profile_name=profile)
+                console.print(f"[dim]Detected account ID: {account_id}[/dim]")
+            except Exception as e:
+                console.print(f"[red]Error detecting account ID: {e}[/red]")
+                console.print("[yellow]Please provide --account-id explicitly[/yellow]")
+                raise typer.Exit(code=1)
+
+        # Initialize components
+        snapshot_storage = SnapshotStorage()
+        safety_checker = SafetyChecker(rules=[])
+        audit_storage = AuditStorage()
+
+        cleaner = ResourceCleaner(
+            snapshot_storage=snapshot_storage,
+            safety_checker=safety_checker,
+            audit_storage=audit_storage,
+        )
+
+        # First, run preview to show what will be deleted
+        console.print("[bold]Preview - Analyzing resources...[/bold]")
+        with console.status("[bold green]Analyzing..."):
+            preview_op = cleaner.preview(
+                baseline_snapshot=baseline_snapshot,
+                account_id=account_id,
+                aws_profile=profile,
+                resource_types=resource_types,
+                regions=regions,
+            )
+
+        deletable_count = preview_op.total_resources - preview_op.skipped_count
+
+        if deletable_count == 0:
+            console.print("\n[green]✓ No resources to delete - environment matches baseline[/green]\n")
+            raise typer.Exit(code=0)
+
+        # Show what will be deleted
+        console.print("\n[bold yellow]The following will be PERMANENTLY DELETED:[/bold yellow]")
+        console.print(f"• {deletable_count} resource(s) will be deleted")
+        console.print(f"• {preview_op.skipped_count} resource(s) will be skipped (protected)")
+        console.print(f"• Account: {account_id}")
+        console.print(f"• Baseline: {baseline_snapshot}")
+
+        if preview_op.filters:
+            if preview_op.filters.get("resource_types"):
+                console.print(f"• Types: {', '.join(preview_op.filters['resource_types'])}")
+            if preview_op.filters.get("regions"):
+                console.print(f"• Regions: {', '.join(preview_op.filters['regions'])}")
+
+        # Interactive confirmation (unless --yes flag)
+        if not yes:
+            console.print()
+            proceed = typer.confirm(
+                "⚠️  Are you absolutely sure you want to DELETE these resources?",
+                default=False,
+            )
+            if not proceed:
+                console.print("\n[yellow]Aborted - no resources were deleted[/yellow]\n")
+                raise typer.Exit(code=0)
+
+        # Execute deletion
+        console.print("\n[bold red]Executing deletion...[/bold red]")
+        with console.status("[bold red]Deleting resources..."):
+            operation = cleaner.execute(
+                baseline_snapshot=baseline_snapshot,
+                account_id=account_id,
+                confirmed=True,
+                aws_profile=profile,
+                resource_types=resource_types,
+                regions=regions,
+            )
+
+        # Display results
+        console.print("\n[bold]Deletion Complete[/bold]\n")
+
+        # Results summary
+        status_color = (
+            "green"
+            if operation.status.value == "completed"
+            else "yellow" if operation.status.value == "partial" else "red"
+        )
+
+        summary_text = f"""
+[bold]Operation ID:[/bold] {operation.operation_id}
+[bold]Status:[/bold] [{status_color}]{operation.status.value.upper()}[/{status_color}]
+
+[bold]Results:[/bold]
+• Succeeded: {operation.succeeded_count}
+• Failed: {operation.failed_count}
+• Skipped: {operation.skipped_count}
+• Total: {operation.total_resources}
+        """
+
+        console.print(Panel(summary_text.strip(), title="[bold]Execution Summary[/bold]", border_style=status_color))
+
+        # Show audit log location
+        console.print("\n[dim]📝 Full audit log saved to: ~/.snapshots/audit-logs/[/dim]\n")
+
+        # Exit with appropriate code
+        if operation.failed_count > 0:
+            raise typer.Exit(code=1)
+
+    except ValueError as e:
+        console.print(f"\n[red]Error: {e}[/red]\n")
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"\n[red]Unexpected error: {e}[/red]\n")
+        logger.exception("Error in restore execute command")
+        raise typer.Exit(code=2)
+
+
+app.add_typer(restore_app, name="restore")
+
+
 def cli_main():
     """Entry point for console script."""
     app()
