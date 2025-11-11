@@ -442,7 +442,7 @@ MIT License - see [LICENSE](LICENSE)
 
 [![Star on GitHub](https://img.shields.io/github/stars/troylar/aws-inventory-manager?style=social)](https://github.com/troylar/aws-inventory-manager)
 
-**Version** 0.3.0 • **Python** 3.8 - 3.13 • **Status** Alpha
+**Version** 0.4.0 • **Python** 3.8 - 3.13 • **Status** Alpha
 
 [⬆ Back to Top](#-aws-inventory-manager)
 
