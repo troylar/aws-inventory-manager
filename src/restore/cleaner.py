@@ -223,7 +223,6 @@ class ResourceCleaner:
         )
 
         # Import at module level to avoid UnboundLocalError
-        from src.models.deletion_record import DeletionRecord, DeletionStatus
 
         # Execute deletions with protection checks
         succeeded_count = 0
@@ -444,8 +443,9 @@ class ResourceCleaner:
         Returns:
             Resource object
         """
-        from src.models.resource import Resource
         import hashlib
+
+        from src.models.resource import Resource
 
         # Generate config hash from resource dict for comparison
         config_str = f"{resource_dict.get('arn', '')}{resource_dict.get('resource_type', '')}"

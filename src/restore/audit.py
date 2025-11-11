@@ -5,7 +5,6 @@ Stores and retrieves audit logs in YAML format for compliance and troubleshootin
 
 from __future__ import annotations
 
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Optional

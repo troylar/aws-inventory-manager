@@ -5,13 +5,11 @@ Test coverage for resource cleanup orchestration and preview functionality.
 
 from __future__ import annotations
 
-from datetime import datetime
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
-from src.models.deletion_operation import DeletionOperation, OperationMode, OperationStatus
-from src.models.protection_rule import ProtectionRule, RuleType
+from src.models.deletion_operation import OperationMode, OperationStatus
 from src.restore.cleaner import ResourceCleaner
 
 
@@ -543,7 +541,7 @@ class TestResourceCleanerExecute:
         with patch.object(cleaner, "_collect_current_resources", return_value=mock_current_resources), patch.object(
             cleaner, "_delete_resource", return_value=True
         ):
-            operation = cleaner.execute(
+            cleaner.execute(
                 baseline_snapshot="baseline-snapshot",
                 account_id="123456789012",
                 confirmed=True,
@@ -800,7 +798,7 @@ class TestResourceCleanerEdgeCases:
             mock_deleter_class.return_value = mock_deleter
 
             with patch("src.restore.cleaner.logger") as mock_logger:
-                operation = cleaner.execute(
+                cleaner.execute(
                     baseline_snapshot="test-snapshot",
                     account_id="123456789012",
                     confirmed=True,

@@ -5,8 +5,6 @@ Test coverage for protection rule evaluation against resources.
 
 from __future__ import annotations
 
-import pytest
-
 from src.models.protection_rule import ProtectionRule, RuleType
 from src.restore.safety import SafetyChecker
 

@@ -7,7 +7,7 @@ using Kahn's topological sort algorithm.
 from __future__ import annotations
 
 from collections import defaultdict, deque
-from typing import Optional
+from typing import Any
 
 
 class DependencyResolver:
@@ -149,24 +149,24 @@ class DependencyResolver:
             True if circular dependency exists, False otherwise
         """
         # Use DFS with color marking (white, gray, black)
-        WHITE = 0  # Unvisited
-        GRAY = 1  # Visiting
-        BLACK = 2  # Visited
+        white = 0  # Unvisited
+        gray = 1  # Visiting
+        black = 2  # Visited
 
-        color = {node: WHITE for node in self.graph}
+        color = {node: white for node in self.graph}
 
         def dfs(node: str) -> bool:
             """DFS visit that returns True if cycle found."""
-            if color.get(node, WHITE) == GRAY:
+            if color.get(node, white) == gray:
                 # Back edge found - cycle exists
                 return True
 
-            if color.get(node, WHITE) == BLACK:
+            if color.get(node, white) == black:
                 # Already visited
                 return False
 
             # Mark as visiting
-            color[node] = GRAY
+            color[node] = gray
 
             # Visit all parents
             for parent in self.graph.get(node, []):
@@ -174,12 +174,12 @@ class DependencyResolver:
                     return True
 
             # Mark as visited
-            color[node] = BLACK
+            color[node] = black
             return False
 
         # Check all nodes
         for node in self.graph:
-            if color[node] == WHITE:
+            if color[node] == white:
                 if dfs(node):
                     return True
 
@@ -230,7 +230,7 @@ class DependencyResolver:
 
         return dict(tiers)
 
-    def _get_nested_field(self, metadata: dict, field_path: str) -> Optional[any]:
+    def _get_nested_field(self, metadata: dict, field_path: str) -> Any:
         """Get nested field value from metadata.
 
         Args:
@@ -241,7 +241,7 @@ class DependencyResolver:
             Field value if found, None otherwise
         """
         parts = field_path.split(".")
-        value = metadata
+        value: Any = metadata
 
         for part in parts:
             if isinstance(value, dict):

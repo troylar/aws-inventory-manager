@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from unittest.mock import Mock, patch
 
-import pytest
 from botocore.exceptions import ClientError
 
 from src.restore.deleter import ResourceDeleter

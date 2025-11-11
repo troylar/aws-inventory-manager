@@ -7,13 +7,13 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
 from src.models.deletion_operation import OperationMode, OperationStatus
-from src.restore.cleaner import ResourceCleaner
 from src.restore.audit import AuditStorage
+from src.restore.cleaner import ResourceCleaner
 from src.restore.safety import SafetyChecker
 from src.snapshot.storage import SnapshotStorage
 
@@ -31,8 +31,8 @@ class TestRestoreWorkflowIntegration:
     @pytest.fixture
     def snapshot_storage(self, temp_storage_dir: Path) -> SnapshotStorage:
         """Create snapshot storage with test data."""
-        from src.models.snapshot import Snapshot
         from src.models.resource import Resource
+        from src.models.snapshot import Snapshot
 
         storage = SnapshotStorage(storage_dir=str(temp_storage_dir))
 

@@ -5,10 +5,8 @@ Test coverage for audit log storage and retrieval with YAML format.
 
 from __future__ import annotations
 
-import os
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 import yaml

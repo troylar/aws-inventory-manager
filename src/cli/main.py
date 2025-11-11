@@ -1914,7 +1914,7 @@ def restore_preview(
         # Preview with specific AWS profile
         awsinv restore preview baseline-snapshot --profile production
     """
-    from ..aws.credentials import get_current_account_id
+    from ..aws.credentials import get_account_id
     from ..restore.audit import AuditStorage
     from ..restore.cleaner import ResourceCleaner
     from ..restore.safety import SafetyChecker
@@ -1925,7 +1925,7 @@ def restore_preview(
         # Auto-detect account ID if not provided
         if not account_id:
             try:
-                account_id = get_current_account_id(profile_name=profile)
+                account_id = get_account_id(profile_name=profile)
                 console.print(f"[dim]Detected account ID: {account_id}[/dim]")
             except Exception as e:
                 console.print(f"[red]Error detecting account ID: {e}[/red]")
@@ -1954,7 +1954,7 @@ def restore_preview(
             )
 
         # Display results
-        console.print(f"\n[bold green]✓ Preview Complete[/bold green]\n")
+        console.print("\n[bold green]✓ Preview Complete[/bold green]\n")
 
         # Summary panel
         summary_text = f"""
@@ -2026,7 +2026,7 @@ def restore_execute(
         # Execute in specific region with profile
         awsinv restore execute baseline-snapshot --confirm --region us-east-1 --profile prod
     """
-    from ..aws.credentials import get_current_account_id
+    from ..aws.credentials import get_account_id
     from ..restore.audit import AuditStorage
     from ..restore.cleaner import ResourceCleaner
     from ..restore.safety import SafetyChecker
@@ -2044,7 +2044,7 @@ def restore_execute(
         # Auto-detect account ID if not provided
         if not account_id:
             try:
-                account_id = get_current_account_id(profile_name=profile)
+                account_id = get_account_id(profile_name=profile)
                 console.print(f"[dim]Detected account ID: {account_id}[/dim]")
             except Exception as e:
                 console.print(f"[red]Error detecting account ID: {e}[/red]")
@@ -2080,7 +2080,7 @@ def restore_execute(
             raise typer.Exit(code=0)
 
         # Show what will be deleted
-        console.print(f"\n[bold yellow]The following will be PERMANENTLY DELETED:[/bold yellow]")
+        console.print("\n[bold yellow]The following will be PERMANENTLY DELETED:[/bold yellow]")
         console.print(f"• {deletable_count} resource(s) will be deleted")
         console.print(f"• {preview_op.skipped_count} resource(s) will be skipped (protected)")
         console.print(f"• Account: {account_id}")
@@ -2116,7 +2116,7 @@ def restore_execute(
             )
 
         # Display results
-        console.print(f"\n[bold]Deletion Complete[/bold]\n")
+        console.print("\n[bold]Deletion Complete[/bold]\n")
 
         # Results summary
         status_color = (
@@ -2139,7 +2139,7 @@ def restore_execute(
         console.print(Panel(summary_text.strip(), title="[bold]Execution Summary[/bold]", border_style=status_color))
 
         # Show audit log location
-        console.print(f"\n[dim]📝 Full audit log saved to: ~/.snapshots/audit-logs/[/dim]\n")
+        console.print("\n[dim]📝 Full audit log saved to: ~/.snapshots/audit-logs/[/dim]\n")
 
         # Exit with appropriate code
         if operation.failed_count > 0:
