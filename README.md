@@ -51,7 +51,7 @@ awsinv restore execute my-snapshot --confirm  # Clean up new resources
 
 <table>
 <tr>
-<td width="33%">
+<td width="33%" valign="top">
 
 ### 📸 Snapshot
 - 27 AWS services
@@ -61,7 +61,7 @@ awsinv restore execute my-snapshot --confirm  # Clean up new resources
 - Export to JSON/CSV
 
 </td>
-<td width="33%">
+<td width="33%" valign="top">
 
 ### 🔍 Track Changes
 - Field-level drift detection
@@ -71,7 +71,7 @@ awsinv restore execute my-snapshot --confirm  # Clean up new resources
 - JSON export
 
 </td>
-<td width="33%">
+<td width="33%" valign="top">
 
 ### 🔒 Security
 - 12+ CIS-aligned checks
@@ -83,7 +83,7 @@ awsinv restore execute my-snapshot --confirm  # Clean up new resources
 </td>
 </tr>
 <tr>
-<td width="33%">
+<td width="33%" valign="top">
 
 ### 💰 Cost Analysis
 - Per-inventory tracking
@@ -93,7 +93,7 @@ awsinv restore execute my-snapshot --confirm  # Clean up new resources
 - Team attribution
 
 </td>
-<td width="33%">
+<td width="33%" valign="top">
 
 ### 🧹 Restore (NEW)
 - Preview mode (dry-run)
@@ -103,7 +103,7 @@ awsinv restore execute my-snapshot --confirm  # Clean up new resources
 - Supports 32+ resource types
 
 </td>
-<td width="33%">
+<td width="33%" valign="top">
 
 ### 📊 Reporting
 - Summary & detailed views
