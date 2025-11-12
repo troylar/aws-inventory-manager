@@ -24,7 +24,7 @@ AWS Inventory Manager gives you complete visibility and control over your AWS re
 
 ```bash
 # Capture your environment
-awsinv snapshot create baseline --regions us-east-1,us-west-2
+awsinv snapshot create my-snapshot --regions us-east-1,us-west-2
 
 # Track what changed
 awsinv delta --show-diff
@@ -32,16 +32,16 @@ awsinv delta --show-diff
 # Find security issues
 awsinv security scan --severity HIGH
 
-# Restore to baseline (NEW!)
-awsinv restore preview baseline  # See what would be deleted
-awsinv restore execute baseline --confirm  # Clean up new resources
+# Restore to any snapshot (NEW!)
+awsinv restore preview my-snapshot  # See what would be deleted
+awsinv restore execute my-snapshot --confirm  # Clean up new resources
 ```
 
 ### Why You Need This
 
 - **"What changed?"** → Field-level configuration drift detection
 - **"Are we secure?"** → Automated CIS Benchmark security scanning
-- **"Can we restore?"** → Delete resources created after baseline snapshot
+- **"Can we restore?"** → Delete resources created after any snapshot
 - **"How much does this cost?"** → Per-inventory cost tracking
 - **"Who owns what?"** → Tag-based filtering and team isolation
 
@@ -83,7 +83,7 @@ awsinv restore execute baseline --confirm  # Clean up new resources
 </td>
 </tr>
 <tr>
-<td>
+<td width="33%">
 
 ### 💰 Cost Analysis
 - Per-inventory tracking
@@ -93,7 +93,7 @@ awsinv restore execute baseline --confirm  # Clean up new resources
 - Team attribution
 
 </td>
-<td>
+<td width="33%">
 
 ### 🧹 Restore (NEW)
 - Preview mode (dry-run)
@@ -103,7 +103,7 @@ awsinv restore execute baseline --confirm  # Clean up new resources
 - Supports 32+ resource types
 
 </td>
-<td>
+<td width="33%">
 
 ### 📊 Reporting
 - Summary & detailed views
@@ -129,8 +129,8 @@ pip install aws-inventory-manager
 ### 60-Second Demo
 
 ```bash
-# 1. Create a baseline snapshot
-awsinv snapshot create baseline --regions us-east-1
+# 1. Create a snapshot
+awsinv snapshot create my-snapshot --regions us-east-1
 
 # 2. See what you have
 awsinv snapshot report
@@ -138,14 +138,14 @@ awsinv snapshot report
 # 3. Make some changes in AWS console...
 
 # 4. Track what changed
-awsinv delta --snapshot baseline --show-diff
+awsinv delta --snapshot my-snapshot --show-diff
 
 # 5. Scan for security issues
 awsinv security scan
 
-# 6. Restore to baseline (removes new resources)
-awsinv restore preview baseline      # Safe preview
-awsinv restore execute baseline --confirm  # Actual cleanup
+# 6. Restore to snapshot (removes new resources)
+awsinv restore preview my-snapshot      # Safe preview
+awsinv restore execute my-snapshot --confirm  # Actual cleanup
 ```
 
 ---
@@ -159,7 +159,7 @@ awsinv restore execute baseline --confirm  # Actual cleanup
 
 ```bash
 # Basic snapshot
-awsinv snapshot create prod-baseline --regions us-east-1,us-west-2
+awsinv snapshot create prod-snapshot --regions us-east-1,us-west-2
 
 # With tag filtering
 awsinv snapshot create team-alpha \
@@ -179,11 +179,11 @@ awsinv snapshot report --export report.json
 <summary><b>2. Track Configuration Changes</b></summary>
 
 ```bash
-# See what changed since baseline
-awsinv delta --snapshot baseline
+# See what changed since snapshot
+awsinv delta --snapshot my-snapshot
 
 # Show field-level changes
-awsinv delta --snapshot baseline --show-diff
+awsinv delta --snapshot my-snapshot --show-diff
 ```
 
 **Example output:**
@@ -224,23 +224,25 @@ awsinv security scan --export findings.json
 </details>
 
 <details>
-<summary><b>4. Restore to Baseline (NEW)</b></summary>
+<summary><b>4. Restore to Snapshot (NEW)</b></summary>
 
 ```bash
 # Preview what would be deleted (safe, no changes)
-awsinv restore preview baseline
+awsinv restore preview <snapshot-name>
 
 # Shows:
-# - Resources created after baseline
+# - Resources created after the snapshot
 # - Which are protected
 # - Deletion order (respects dependencies)
 
 # Execute cleanup (requires --confirm)
-awsinv restore execute baseline --confirm
+awsinv restore execute <snapshot-name> --confirm
 
 # Filter by type or region
-awsinv restore preview baseline --type AWS::EC2::Instance --region us-east-1
+awsinv restore preview <snapshot-name> --type AWS::EC2::Instance --region us-east-1
 ```
+
+**Restore to ANY snapshot** - not just a baseline! Use any snapshot as your restore point.
 
 **Safety features:**
 - Preview mode (dry-run)
@@ -332,12 +334,12 @@ awsinv security scan --cis-only --export audit.csv
 
 ### Ephemeral Environment Cleanup
 ```bash
-# Create baseline before temporary resources
+# Create snapshot before temporary resources
 awsinv snapshot create clean-state
 
-# After testing, restore to baseline
+# After testing, restore to snapshot
 awsinv restore execute clean-state --confirm
-# Removes all resources created after baseline
+# Removes all resources created after the snapshot
 ```
 
 ### Configuration Drift Detection
