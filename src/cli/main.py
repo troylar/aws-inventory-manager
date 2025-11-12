@@ -1903,11 +1903,13 @@ def restore_preview(
 
     Shows what resources have been created since the snapshot without
     performing any deletions. This is a safe dry-run operation.
-    Works with ANY snapshot - not just a baseline!
 
     Examples:
-        # Preview all new resources since snapshot
-        awsinv restore preview my-snapshot
+        # Preview resources since a baseline snapshot
+        awsinv restore preview prod-baseline
+
+        # Preview with ephemeral test snapshot
+        awsinv restore preview clean-state
 
         # Preview only EC2 instances in us-east-1
         awsinv restore preview my-snapshot --type AWS::EC2::Instance --region us-east-1
@@ -2016,11 +2018,13 @@ def restore_execute(
 
     Deletes resources that were created after the snapshot, restoring
     your AWS environment to that point in time. Protected resources are skipped.
-    Works with ANY snapshot - not just a baseline!
 
     Examples:
-        # Execute restoration (will prompt for confirmation)
-        awsinv restore execute my-snapshot --confirm
+        # Restore to a baseline snapshot
+        awsinv restore execute prod-baseline --confirm
+
+        # Clean up ephemeral test environment
+        awsinv restore execute clean-state --confirm
 
         # Execute with filters and skip prompt
         awsinv restore execute my-snapshot --confirm --yes --type AWS::EC2::Instance

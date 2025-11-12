@@ -228,7 +228,7 @@ awsinv security scan --export findings.json
 
 ```bash
 # Preview what would be deleted (safe, no changes)
-awsinv restore preview <snapshot-name>
+awsinv restore preview prod-baseline
 
 # Shows:
 # - Resources created after the snapshot
@@ -236,13 +236,13 @@ awsinv restore preview <snapshot-name>
 # - Deletion order (respects dependencies)
 
 # Execute cleanup (requires --confirm)
-awsinv restore execute <snapshot-name> --confirm
+awsinv restore execute prod-baseline --confirm
 
 # Filter by type or region
-awsinv restore preview <snapshot-name> --type AWS::EC2::Instance --region us-east-1
+awsinv restore preview my-snapshot --type AWS::EC2::Instance --region us-east-1
 ```
 
-**Restore to ANY snapshot** - not just a baseline! Use any snapshot as your restore point.
+**Works with any snapshot** - use whatever naming convention fits your workflow.
 
 **Safety features:**
 - Preview mode (dry-run)
@@ -319,6 +319,34 @@ awsinv restore execute <snapshot> --confirm  # Delete new resources
 
 ## 🎯 Use Cases
 
+### Baseline State Management
+```bash
+# Capture your production baseline
+awsinv snapshot create prod-baseline
+
+# Later, restore to baseline state
+awsinv restore execute prod-baseline --confirm
+# Removes all resources created after the baseline
+```
+
+### Ephemeral Environment Cleanup
+```bash
+# Create snapshot before temporary resources
+awsinv snapshot create clean-state
+
+# After testing, restore to snapshot
+awsinv restore execute clean-state --confirm
+```
+
+### Configuration Drift Detection
+```bash
+# Before deployment
+awsinv snapshot create pre-deploy
+
+# After deployment - see exactly what changed
+awsinv delta --snapshot pre-deploy --show-diff
+```
+
 ### Multi-Team Cost Attribution
 ```bash
 # Track costs per team
@@ -330,25 +358,6 @@ awsinv cost --snapshot team-frontend
 ```bash
 # CIS compliance reporting
 awsinv security scan --cis-only --export audit.csv
-```
-
-### Ephemeral Environment Cleanup
-```bash
-# Create snapshot before temporary resources
-awsinv snapshot create clean-state
-
-# After testing, restore to snapshot
-awsinv restore execute clean-state --confirm
-# Removes all resources created after the snapshot
-```
-
-### Configuration Drift Detection
-```bash
-# Before deployment
-awsinv snapshot create pre-deploy
-
-# After deployment - see exactly what changed
-awsinv delta --snapshot pre-deploy --show-diff
 ```
 
 ---
